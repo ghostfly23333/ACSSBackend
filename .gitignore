@@ -1,0 +1,5 @@
+__pycache__
+scripts/apidoc
+controllers/__pycache__
+analyzer/__pycache__
+adapter/__pycache__
