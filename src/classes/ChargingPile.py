@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import Optional
 
-from attr import dataclass
-
 
 class PileState(Enum):
     Idle = 0
@@ -36,6 +34,7 @@ class ChangingInfo:
 
 class ChargingPile:
     pile_id: str
+    pile_type: PileType
     charge_speed: float
     status: PileState
     cars_queue: list[ChangingInfo]
@@ -43,6 +42,7 @@ class ChargingPile:
     def __init__(self, pile_id: str, pile_type: PileType):
         # metadata
         self.pile_id = pile_id
+        self.pile_type = pile_type
         self.charge_speed = PILE_CHARGE_SPEED[pile_type]
 
         # runtime data
@@ -76,3 +76,13 @@ class ChargingPile:
         self.cars_queue.append(ChangingInfo(car_id, capacity))
         if self.status == PileState.Idle:
             self.status = PileState.Working
+
+charging_piles = {
+    "1": ChargingPile("1", PileType.Fast),
+    "2": ChargingPile("2", PileType.Fast),
+    "3": ChargingPile("3", PileType.Normal),
+    "4": ChargingPile("4", PileType.Normal),
+    "5": ChargingPile("5", PileType.Normal),
+    "6": ChargingPile("6", PileType.Normal),
+
+}

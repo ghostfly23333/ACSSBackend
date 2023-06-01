@@ -1,5 +1,8 @@
-from flask import Blueprint
-app = Blueprint('admin_controller',__name__)
+from flask import Blueprint, request, jsonify
+
+app = Blueprint('admin_controller', __name__)
+
+from classes.ChargingPile import charging_piles, PileState
 
 @app.route('/query/state', methods=['GET'])
 def query_state():
@@ -33,8 +36,41 @@ def query_state():
         "message": "充电桩不存在"
       }
     """
-    return 'admin/query/state'
 
+    pile_id = request.args.get('pile_id')
+    if pile_id is None or not isinstance(pile_id, str):
+        return jsonify({
+            "status": 1,
+            "message": "参数错误",
+        })
+
+    if pile_id in charging_piles:
+        pile = charging_piles[pile_id]
+        if pile.current_info is not None:
+            return jsonify({
+                "status": 0,
+                "message": "查询成功",
+                "data": {
+                    "pile_id": pile.pile_id,
+                    "status": pile.status.value,
+                    "amount": pile.current_info.changed_amount,
+                    "time": pile.current_info.changed_seconds,
+                }
+            })
+        else:
+            return jsonify({
+                "status": 0,
+                "message": "查询成功",
+                "data": {
+                    "pile_id": pile.pile_id,
+                    "status": pile.status.value,
+                }
+            })
+
+    return jsonify({
+        "status": 1,
+        "message": "充电桩不存在",
+    })
 
 
 @app.route('/alter/pile', methods=['POST'])
@@ -58,7 +94,30 @@ def alter_pile():
         "message": "充电桩不存在"
       }
     """
-    return 'admin/alter/pile'
+    pile_id = request.json.get('pile_id')
+    status = request.json.get('status')
+    if pile_id is None or not isinstance(pile_id, str) \
+            or status is None or status not in [0, 1, 2]:
+        return jsonify({
+            "status": 1,
+            "message": "参数错误",
+        })
+    
+    if pile_id in charging_piles:
+        pile = charging_piles[pile_id]
+        pile.status = PileState(status)
+
+        # TODO: reschedule
+
+        return jsonify({
+            "status": 0,
+            "message": "修改成功",
+        })
+    
+    return jsonify({
+        "status": 1,
+        "message": "充电桩不存在",
+    })
 
 
 
