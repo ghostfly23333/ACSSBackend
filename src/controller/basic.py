@@ -24,7 +24,6 @@ def register():
         "status": 0,
         "message": "注册成功"
       }
-    @apiError {json} Error-Response
     @apiErrorExample {json} Error-Response:
       HTTP/1.1 200 OK
       {

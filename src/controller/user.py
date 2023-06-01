@@ -7,8 +7,7 @@ def charge():
     @api {post} /user/charge 充电请求
     @apiName Charge
     @apiGroup User
-    @apiHeader {String} token 用户token
-    @apiParam {String} username 用户名
+    @apiParam {String} user_id 用户id
     @apiParam {String} car_id 车辆id
     @apiParam {Int} mode 充电模式(0:常规, 1:快速)
     @apiParam {Double} amount 电量
@@ -37,8 +36,8 @@ def query_profile():
     @api {get} /user/query/profile 获取用户信息
     @apiName QeuryProfile
     @apiGroup User
-    @apiHeader {String} token 用户token
-    @apiSuccess {String} username 用户名
+    @apiParam {String} user_id 用户id
+    @apiSuccess {String} user_id 用户id
     @apiSuccess {json[]} bill 账单 
     @apiSuccessExample {json} Success-Response:
       HTTP/1.1 200 OK
@@ -46,7 +45,7 @@ def query_profile():
         "status": 0,
         "message": "获取成功",
         "data": {
-          "username": "admin",
+          "user_id": "",
           "bill": [
             {
               "id": "",
@@ -72,7 +71,7 @@ def query_bill():
     @api {get} /user/query/bill 查询账单
     @apiName QueryBill
     @apiGroup User
-    @apiHeader {String} token 用户token
+    @apiParam {String} user_id 用户id
     @apiParam {String} bill_id 账单id
     @apiSuccess {String} bill_id 账单id
     @apiSuccess {Int} status 账单状态 (0:已提交, 1:正在充电, 2:已完成, 3:已取消)
@@ -129,7 +128,6 @@ def query_queuing():
     @api {get} /user/query/queue 查询排队信息
     @apiName QueryQueue
     @apiGroup User
-    @apiHeader {String} token 用户token
     @apiParam {String} car_id 车辆id
     @apiSuccess {String} car_id 车辆id
     @apiSuccess {String} pile_id 充电桩id
@@ -166,7 +164,7 @@ def alter_amount():
     @api {post} /user/alter/amount 修改电量
     @apiName AlterAmount
     @apiGroup User
-    @apiHeader {String} token 用户token
+    @apiParam {String} user_id 用户id
     @apiParam {String} bill_id 账单id
     @apiParam {Double} amount 电量
     @apiSuccessExample {json} Success-Response:
@@ -198,7 +196,7 @@ def alter_mode():
     @api {post} /user/alter/mode 修改充电模式
     @apiName AlterMode
     @apiGroup User
-    @apiHeader {String} token 用户token
+    @apiParam {String} user_id 用户id
     @apiParam {String} bill_id 账单id
     @apiParam {Int} mode 充电模式(0:常规, 1:快速)
     @apiSuccessExample {json} Success-Response:
@@ -230,7 +228,7 @@ def alter_end():
     @api {post} /user/alter/end 修改结束时间
     @apiName AlterEnd
     @apiGroup User
-    @apiHeader {String} token 用户token
+    @apiParam {String} user_id 用户id
     @apiParam {String} bill_id 账单id
     @apiSuccessExample {json} Success-Response:
       HTTP/1.1 200 OK
@@ -261,7 +259,7 @@ def alter_cancel():
     @api {post} /user/alter/cancel 取消账单
     @apiName AlterCancel
     @apiGroup User
-    @apiHeader {String} token 用户token
+    @apiParam {String} user_id 用户id
     @apiParam {String} bill_id 账单id
     @apiSuccessExample {json} Success-Response:
       HTTP/1.1 200 OK

@@ -7,7 +7,6 @@ def query_state():
     @api {get} /admin/query/state 查询充电桩状态
     @apiName QueryState
     @apiGroup Admin
-    @apiHeader {String} token 用户token
     @apiParam {String} pile_id 充电桩id(不选则查询所有充电桩)
     @apiSuccess {String} pile_id 充电桩id
     @apiSuccess {Int} status 充电桩状态 (0:空闲, 1:正在充电, 2:故障)
@@ -44,7 +43,6 @@ def query_waitlist():
     @api {get} /admin/query/pile/waitlist 查询充电桩等待队列
     @apiName QueryWaitlist
     @apiGroup Admin
-    @apiHeader {String} token 用户token
     @apiParam {String} pile_id 充电桩id
     @apiSuccess {String} user_id 用户id
     @apiSuccess {String} car 车辆id
@@ -81,7 +79,6 @@ def query_report():
     @api {get} /admin/query/report 查询报表
     @apiName QueryReport
     @apiGroup Admin
-    @apiHeader {String} token 用户token
     @apiParam {String} start 开始日期
     @apiParam {String} end 结束日期
     @apiSuccess {String} start 开始日期
