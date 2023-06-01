@@ -16,8 +16,8 @@ class PileType(Enum):
 
 # unit: 1 capacity per second
 PILE_CHARGE_SPEED = {
-    PileType.Fast: 30.0,
-    PileType.Normal: 60.0
+    PileType.Fast: 60.0,
+    PileType.Normal: 30.0
 }
 
 
@@ -50,7 +50,7 @@ class ChargingPile:
         self.cars_queue = []
 
     def __str__(self):
-        return f"Charging pile {self.pile_id}: with {self.status} status and speed = {self.charge_time}"
+        return f"Charging pile {self.pile_id}: with {self.status} status and speed = {self.charge_speed}"
     
     @property
     def current_info(self) -> Optional[ChangingInfo]:
@@ -63,7 +63,8 @@ class ChargingPile:
     def time_passed(self, seconds: float):
         if self.current_info is not None:
             self.current_info.changed_seconds += seconds
-            if self.current_info.changed_seconds >= self.charge_time:
+            self.current_info.changed_amount += self.charge_speed * seconds
+            if self.current_info.changed_amount >= self.current_info.all_amount:
                 uid = self.current_info.car_id
                 self.cars_queue.pop(0)
                 if len(self.cars_queue) == 0:
