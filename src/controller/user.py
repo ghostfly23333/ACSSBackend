@@ -1,6 +1,36 @@
 from flask import Blueprint
 app = Blueprint('user_controller',__name__)
 
+@app.route('/charge',methods=['POST'])
+def charge():
+    """
+    @api {post} /user/charge 充电请求
+    @apiName Charge
+    @apiGroup User
+    @apiHeader {String} token 用户token
+    @apiParam {String} username 用户名
+    @apiParam {String} car_id 车辆id
+    @apiParam {Int} mode 充电模式(0:常规, 1:快速)
+    @apiParam {Double} amount 电量
+    @apiSuccess {String} bill_id 账单id
+    @apiSuccessExample {json} Success-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 0,
+        "message": "充电成功",
+        "data": {
+          "bill_id": ""
+        }
+      }
+    @apiErrorExample {json} Error-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 1,
+        "message": "请求失败"
+      }
+    """
+    return 'user/charge'
+
 @app.route('/query/profile', methods=['GET'])
 def query_profile():
     """
