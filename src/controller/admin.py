@@ -37,6 +37,31 @@ def query_state():
 
 
 
+@app.route('/alter/pile', methods=['POST'])
+def alter_pile():
+    """
+    @api {post} /admin/alter/pile 修改充电桩状态
+    @apiName AlterPile
+    @apiGroup Admin
+    @apiParam {String} pile_id 充电桩id
+    @apiParam {Int} status 充电桩状态 (0:关闭, 1:开启, 2:故障)
+    @apiSuccessExample {json} Success-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 0,
+        "message": "修改成功"
+      } 
+    @apiErrorExample {json} Error-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 1,
+        "message": "充电桩不存在"
+      }
+    """
+    return 'admin/alter/pile'
+
+
+
 @app.route('/query/waitlist', methods=['GET'])
 def query_waitlist():
     """
