@@ -29,3 +29,14 @@ class ChargingRequest:
     
     def set_pile_id(self, pile_id: str):
         self.pile_id = pile_id
+
+
+# 索引为{car_id}的请求字典
+request_dict = {}
+
+def get_charging_request(car_id: str) -> ChargingRequest: 
+    return request_dict.get(car_id)
+
+def get_charging_mode(car_id: str) -> int:
+    req = request_dict.get(car_id)
+    return req.mode if req is not None else None
