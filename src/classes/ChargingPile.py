@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional
-
+from threading import Lock
+lock = Lock()
 
 class PileState(Enum):
     Idle = 0
@@ -9,8 +10,8 @@ class PileState(Enum):
 
 
 class PileType(Enum):
-    Fast = 0
-    Normal = 1
+    Normal = 0
+    Fast = 1
 
 # unit: 1 capacity per second
 PILE_CHARGE_SPEED = {
@@ -39,7 +40,7 @@ class ChargingPile:
     pile_type: PileType
     charge_speed: float
     status: PileState
-    cars_queue: list[ChangingInfo]
+    cars_queue: list(ChangingInfo)
 
     def __init__(self, pile_id: str, pile_type: PileType):
         # metadata
@@ -83,12 +84,24 @@ class ChargingPile:
         if self.status == PileState.Idle:
             self.status = PileState.Working
 
+    def is_vacant(self) -> bool:
+        return self.status != PileState.Error and len(self.cars_queue) < 2
+
 charging_piles = {
     "1": ChargingPile("1", PileType.Fast),
     "2": ChargingPile("2", PileType.Fast),
     "3": ChargingPile("3", PileType.Normal),
     "4": ChargingPile("4", PileType.Normal),
     "5": ChargingPile("5", PileType.Normal),
-    "6": ChargingPile("6", PileType.Normal),
-
 }
+
+
+
+def is_vacant(mode: int) -> bool:
+    with lock:
+        if mode == PileType.Fast:
+            return charging_piles["1"].is_vacant() or charging_piles["2"].is_vacant()
+        elif mode == PileType.Normal:
+            return charging_piles["3"].is_vacant() or charging_piles["4"].is_vacant() or charging_piles["5"].is_vacant()
+        else:
+            return False
