@@ -153,7 +153,32 @@ def query_waitlist():
         "message": "token已过期"
       }
     """
-    return 'admin/query/waitlist'
+    pile_id = request.json.get('pile_id')
+    if pile_id is None or not isinstance(pile_id, str):
+        return jsonify({
+            "status": 1,
+            "message": "充电桩不存在",
+        })
+    if pile_id in charging_piles:
+        pile = charging_piles[pile_id]
+        cars_queue = pile.cars_queque
+        cars_data = []
+        for car_changingInfo in cars_queue[1:]: #不含正在充电的充电桩
+            cars_data.append(jsonify({
+                "pile_id": pile_id,
+                "car" : car_changingInfo.car_id,
+                "status": 0,
+                "time"  : car_changingInfo.waited_seconds
+            }))
+        return jsonify({
+            "status": 0,
+            "message": "查询成功",
+            "data" : cars_data,
+        })
+    return jsonify({
+        "status": 1,
+        "message": "token已过期",
+    })
 
 
 
