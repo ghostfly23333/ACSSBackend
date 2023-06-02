@@ -1,4 +1,4 @@
-from src.classes.UserInfo import UserInfo
+from classes.UserInfo import UserInfo
 users_info = {
         "user1": "password1",
         "user2": "password2",

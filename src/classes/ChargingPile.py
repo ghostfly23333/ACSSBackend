@@ -20,7 +20,7 @@ PILE_CHARGE_SPEED = {
 }
 
 
-class ChangingInfo:
+class ChargingInfo:
     car_id: int
     changed_amount: float
     all_amount: float
@@ -40,7 +40,7 @@ class ChargingPile:
     pile_type: PileType
     charge_speed: float
     status: PileState
-    cars_queue: list(ChangingInfo)
+    cars_queue: list[ChargingInfo]
 
     def __init__(self, pile_id: str, pile_type: PileType):
         # metadata
@@ -56,7 +56,7 @@ class ChargingPile:
         return f"Charging pile {self.pile_id}: with {self.status} status and speed = {self.charge_speed}"
     
     @property
-    def current_info(self) -> Optional[ChangingInfo]:
+    def current_info(self) -> Optional[ChargingInfo]:
         if len(self.cars_queue) > 0:
             return self.cars_queue[0]
         return None
@@ -80,7 +80,7 @@ class ChargingPile:
         return None
 
     def queue_car(self, car_id: int, capacity: float):
-        self.cars_queue.append(ChangingInfo(car_id, capacity))
+        self.cars_queue.append(ChargingInfo(car_id, capacity))
         if self.status == PileState.Idle:
             self.status = PileState.Working
 

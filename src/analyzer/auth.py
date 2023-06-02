@@ -1,5 +1,5 @@
-from src.analyzer import users
-from src.classes.UserInfo import UserInfo
+from analyzer import users
+from classes.UserInfo import UserInfo
 
 
 def register(username, password):

@@ -1,8 +1,8 @@
 from flask import Blueprint
 from flask import request
 from flask import jsonify
-from src.analyzer.auth import register as auth_register
-from src.analyzer.auth import login as auth_login
+from analyzer.auth import register as auth_register
+from analyzer.auth import login as auth_login
 
 app = Blueprint('default_controller', __name__)
 
