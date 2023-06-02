@@ -1,5 +1,5 @@
 from classes.ChargingRequest import ChargingRequest, request_dict
-from classes.WaitingArea import waiting_area
+from classes.Schduler import waiting_area
 
 
 # 提交充电请求( 1: 提交成功  0: 提交失败 )

@@ -1,6 +1,5 @@
 from enum import Enum
-from typing import Optional
-from analyzer.scheduler_call import pile_available_callback
+from typing import Callable, Optional
 from threading import Lock
 lock = Lock()
 
@@ -35,6 +34,7 @@ class ChargingInfo:
         self.charged_seconds = 0.0
         self.waited_seconds = 0.0
 
+pile_callbacks: list[Callable[[PileType], None]] = []
 
 class ChargingPile:
     pile_id: str
@@ -77,7 +77,8 @@ class ChargingPile:
                 self.cars_queue.pop(0)
                 if len(self.cars_queue) == 0:
                     self.status = PileState.Idle
-                pile_available_callback(self.pile_type)
+                for func in pile_callbacks:
+                    func(self.pile_type)
                 return uid
         return None
 
@@ -87,7 +88,8 @@ class ChargingPile:
             self.status = PileState.Working
 
     def is_vacant(self) -> bool:
-        return self.status != PileState.Error and len(self.cars_queue) < 2
+        with lock:
+            return self.status != PileState.Error and len(self.cars_queue) < 2
 
 charging_piles = {
     "1": ChargingPile("1", PileType.Fast),
@@ -96,14 +98,3 @@ charging_piles = {
     "4": ChargingPile("4", PileType.Normal),
     "5": ChargingPile("5", PileType.Normal),
 }
-
-
-
-def is_vacant(mode: int) -> bool:
-    with lock:
-        if mode == PileType.Fast:
-            return charging_piles["1"].is_vacant() or charging_piles["2"].is_vacant()
-        elif mode == PileType.Normal:
-            return charging_piles["3"].is_vacant() or charging_piles["4"].is_vacant() or charging_piles["5"].is_vacant()
-        else:
-            return False
