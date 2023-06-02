@@ -23,6 +23,7 @@ def process_new_request(r:str):
         pass
     
 
+
 def get_request(mode: int):
     min = 0
     ret = None
@@ -37,7 +38,6 @@ def get_request(mode: int):
 
 def call_scheduler():
     # scheduler
-
     pass
 
 # for use in end of charging
@@ -48,6 +48,7 @@ def notify_available(mode: int):
       pass
 
 # for use in end of scheduling
+
 def notify_scheduled(r:str):
     # scheduler
     del requests[r]
