@@ -7,6 +7,8 @@ users_info = {
 users = {}
 # 使用userinfo字典来初始化User类的实例
 for user_id, password in users_info.items():
-    user = UserInfo(user_id, password)
+    user = UserInfo(user_id, password,0)
     users[user_id] = user
     #users.append(user)
+# initialize root
+users["root"] = UserInfo("root", "123456",1)
