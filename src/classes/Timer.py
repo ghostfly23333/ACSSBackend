@@ -33,59 +33,70 @@ class Time:
     def to_string(self) -> str:
         return self.__str__()
     
+    def to_dict(self) -> dict:
+        return {
+            "stamp": self.stamp,
+            "year": self.year,
+            "month": self.month,
+            "day": self.day,
+            "hour": self.hour,
+            "minute": self.minute,
+            "second": self.second
+        }
+    
     def __sub__(self, other) -> float:
         return abs(self.stamp - other.stamp)
     
 
 class Timer:
-    system_base_time : float
-    base_time : float
-    task_id: int
-    lock = threading.Lock()
-    dict_lock = threading.Lock()
-    tasks : dict
-    ratio : int
+    _system__base_time : float
+    _base_time : float
+    _task_id: int
+    _lock = threading.Lock()
+    _dict_lock = threading.Lock()
+    _tasks : dict
+    _ratio : int
     # 初始化
-    def __init__(self, ratio:int = 1, base:Time = None) -> None:
-        self.system_base_time = time.time()
+    def __init__(self, _ratio:int = 1, base:Time = None) -> None:
+        self._system__base_time = time.time()
         if base is None:
-            self.base_time = self.system_base_time
+            self._base_time = self._system__base_time
         else:
-            self.base_time = base.stamp
-            print(self.base_time)
-        self.ratio = ratio
-        self.task_id = 0
-        self.tasks = {}
+            self._base_time = base.stamp
+            print(self._base_time)
+        self._ratio = _ratio
+        self._task_id = 0
+        self._tasks = {}
     
     # 任务id
-    def __task_id(self):
-        with self.lock:
-            self.task_id += 1
-            return self.task_id
+    def __task_id__(self):
+        with self._lock:
+            self._task_id += 1
+            return self._task_id
 
     # 定时任务回调
-    def __callback(self, uid):
-        if uid not in self.tasks:
+    def __callback__(self, uid):
+        if uid not in self._tasks:
             return
-        t, func, args = self.tasks[uid]
+        t, func, args = self._tasks[uid]
         if args is None:
             func()
         else:
             func(*args)
-        self.tasks.pop(uid)
+        self._tasks.pop(uid)
 
     # 获取当前时间
     def time(self) -> Time:
         cur = time.time()
-        time_pass = cur - self.system_base_time
-        return Time(self.base_time + time_pass * self.ratio)
+        time_pass = cur - self._system__base_time
+        return Time(self._base_time + time_pass * self._ratio)
 
     # 创建定时任务
     def create_task(self, interval, callback, args = None):
-        interval = interval / self.ratio
-        uid = self.__task_id()
-        t = threading.Timer(interval, self.__callback, args = (uid,))
-        self.tasks[uid] = (t, callback, (args,))
+        interval = interval / self._ratio
+        uid = self.__task_id__()
+        t = threading.Timer(interval, self.__callback__, args = (uid,))
+        self._tasks[uid] = (t, callback, (args,))
         t.start()
         return uid
     
@@ -95,9 +106,9 @@ class Timer:
         return self.create_task(interval, callback, args)
 
     # 取消定时任务
-    def cancel_task(self, task_id, run = False):
-        if task_id in self.tasks:
-            t, func, args = self.tasks.pop(task_id)
+    def cancel_task(self, _task_id, run = False):
+        if _task_id in self._tasks:
+            t, func, args = self._tasks.pop(_task_id)
             t.cancel()
             if run:
                 if args is None:
