@@ -2,6 +2,7 @@ from flask import Blueprint
 from flask import request
 from flask import jsonify
 from analyzer.charging_request import alter_charging_mode, alter_charging_amount, cancel_charging_request
+from analyzer.__init__ import container
 
 
 app = Blueprint('user_controller',__name__)
@@ -123,7 +124,16 @@ def query_bill():
         "message": "账单不存在"
       }
     """
-    return 'user/query/bill'
+    user_id = request.json.get('user_id')
+    bill_id = request.json.get('bill_id')
+    # if cur_bill['bill_id'] !=bill_id :
+    #     return jsonify(cur_bill.content)
+    # else:
+    # 暂时不太清楚该怎么确认是实时还是静态，暂定都是查静态报表
+    bill = container.find(bill_id)
+    return jsonify(bill.content)
+    
+    # return 'user/query/bill'
 
 
 
