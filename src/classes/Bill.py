@@ -70,6 +70,10 @@ class BillContainer:
                 result.append(i[1])
         return result
                     
+    # todo：仍在充电时，若有查找需求，生成一个实例，不插入容器
+    # todo: 充电结束后，生成一份静态报表，存进容器
+    # todo: 充电结束后，有查找需求，在容器内查找静态报表
+                    
 # con = BillContainer()
 
 # a = Bill('1','1',2,'3','0',5,5,'day1','day2',100,100)
