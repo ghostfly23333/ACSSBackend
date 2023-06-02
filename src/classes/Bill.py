@@ -1,5 +1,30 @@
 class Bill:
-    def __init__(self,bill_id:str,
+    def __init__(self):
+        
+        self.content = {
+            'bill_id':None,
+            'date':None,
+            'pile':None,
+            'car':None,
+            'mode':None,
+            'amount':None,
+            'duration':None,
+            'start_time':None,
+            'end_time':None,
+            'service_cost':None,
+            'total':None,
+            }
+    
+    def __getitem__(self, key):
+        return self.content[key]
+    
+    def __setitem__(self, key,value):
+        self.content[key]=value
+        
+    def __str__(self):
+        return self.content.__str__()
+    
+    def fill(self,bill_id:str,
                 date:str,
                 pile:int,
                 car:str,
@@ -24,12 +49,10 @@ class Bill:
             'service_cost':service_cost,
             'total':total,
             }
-    def __getitem__(self, key):
-        return self.content[key]
-    def __setitem__(self, key,value):
-        self.content[key]=value
-    def __str__(self):
-        return self.content.__str__()
+    
+    # todo：仍在充电时，若有查找需求，生成一个实例，不插入容器
+    def generate_request(self,bill_id,date,pile,car,mode,start_time):
+        
     
 class BillContainer:
     container: dict
@@ -70,7 +93,7 @@ class BillContainer:
                 result.append(i[1])
         return result
                     
-    # todo：仍在充电时，若有查找需求，生成一个实例，不插入容器
+    
     # todo: 充电结束后，生成一份静态报表，存进容器
     # todo: 充电结束后，有查找需求，在容器内查找静态报表
                     
