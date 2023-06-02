@@ -4,6 +4,7 @@ class ChargingRequest:
     mode: int
     amount: float
     queue_num: int
+    pile_id: str
 
     def __init__(self, user_id: str, car_id: str, mode: int, amount: float):
         self.user_id = user_id
@@ -20,3 +21,6 @@ class ChargingRequest:
     
     def set_queue_num(self, queue_num: int):
         self.queue_num = queue_num
+    
+    def set_pile_id(self, pile_id: str):
+        self.pile_id = pile_id
