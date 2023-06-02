@@ -40,7 +40,7 @@ class ChargingPile:
     pile_type: PileType
     charge_speed: float
     status: PileState
-    cars_queue: list[ChargingInfo]
+    cars_queue: list
 
     def __init__(self, pile_id: str, pile_type: PileType):
         # metadata

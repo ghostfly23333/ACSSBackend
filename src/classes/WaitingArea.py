@@ -1,13 +1,12 @@
 class WaitingArea:
     size: int
-    f_charging_queue: list[str]
-    t_charging_queue: list[str]
+    f_charging_queue: list
+    t_charging_queue: list
 
     def __init__(self, size: int):
         self.size = size
-        self.f_charging_queue = list()
-        self.t_charging_queue = list()
-
+        self.f_charging_queue = []
+        self.t_charging_queue = []
     # 指定车辆进入等候区
     def enter(self, car_id: str, mode: int):
         if mode == 0:
