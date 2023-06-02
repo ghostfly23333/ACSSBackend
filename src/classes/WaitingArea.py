@@ -1,5 +1,4 @@
-from ChargingRequest import ChargingMode
-from analyzer.charging_request import get_charging_mode
+from classes.ChargingRequest import ChargingMode, get_charging_mode
 from analyzer.scheduler_call import try_request, start_calling_callback
 from threading import Lock
 calling_lock = Lock()
