@@ -21,17 +21,17 @@ PILE_CHARGE_SPEED = {
 
 
 class ChargingInfo:
-    car_id: int
-    changed_amount: float
+    car_id: str
+    charged_amount: float
     all_amount: float
-    changed_seconds: float
+    charged_seconds: float
     waited_seconds: float
 
-    def __init__(self, car_id: int, all_amount: float):
+    def __init__(self, car_id: str, all_amount: float):
         self.car_id = car_id
         self.all_amount = all_amount
-        self.changed_amount = 0
-        self.changed_seconds = 0.0
+        self.charged_amount = 0
+        self.charged_seconds = 0.0
         self.waited_seconds = 0.0
 
 
@@ -69,9 +69,9 @@ class ChargingPile:
                 waiting_car.waited_seconds += seconds
 
         if self.current_info is not None:
-            self.current_info.changed_seconds += seconds
-            self.current_info.changed_amount += self.charge_speed * seconds
-            if self.current_info.changed_amount >= self.current_info.all_amount:
+            self.current_info.charged_seconds += seconds
+            self.current_info.charged_amount += self.charge_speed * seconds
+            if self.current_info.charged_amount >= self.current_info.all_amount:
                 uid = self.current_info.car_id
                 self.cars_queue.pop(0)
                 if len(self.cars_queue) == 0:
@@ -79,7 +79,7 @@ class ChargingPile:
                 return uid
         return None
 
-    def queue_car(self, car_id: int, capacity: float):
+    def queue_car(self, car_id: str, capacity: float):
         self.cars_queue.append(ChargingInfo(car_id, capacity))
         if self.status == PileState.Idle:
             self.status = PileState.Working

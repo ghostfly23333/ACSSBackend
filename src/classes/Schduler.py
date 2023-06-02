@@ -37,7 +37,7 @@ class FIFOScheduler(Scheduler):
                 pile_time = 0
                 if len(pile.cars_queue) < 2:
                     for info in pile.cars_queue:
-                        pile_time = pile_time + (info.all_amount - info.changed_amount) / pile.charge_speed
+                        pile_time = pile_time + (info.all_amount - info.charged_amount) / pile.charge_speed
                     if minimum_time > pile_time:
                         minimum_time = pile_time
                         minimum_index = pile.pile_id
@@ -45,7 +45,7 @@ class FIFOScheduler(Scheduler):
             return False, -1
         else:
             request = get_charging_request(car_id)
-            info = ChargingInfo(car_id, 0, request.amount, 0)
+            info = ChargingInfo(car_id, request.amount)
             charging_piles[minimum_index].cars_queue.append(info)
             return True, minimum_index
 
@@ -54,7 +54,7 @@ class FIFOScheduler(Scheduler):
         for info in charging_piles[pile_id].cars_queue:
             # TODO: generate bill
             info_list.append((get_charging_request(info.car_id).queue_num,
-                              ChargingInfo(info.car_id, 0, info.all_amount - info.changed_amount, 0)))
+                              ChargingInfo(info.car_id, info.all_amount - info.charged_amount)))
         charging_piles[pile_id].cars_queue.clear()
         for pile_index in self.piles[charge_mode]:
             pile = charging_piles[pile_index]
@@ -66,12 +66,11 @@ class FIFOScheduler(Scheduler):
             pile.cars_queue.pop(1)
         info_list.sort(key=lambda x: x[0][1:])
         for info in info_list:
-            inserted = self.add_query(charge_mode, info.car_id)
-            if inserted.first == False:
-                request = get_charging_request(info.car_id)
+            inserted = self.add_query(charge_mode, info[1].car_id)
+            request = get_charging_request(info[1].car_id)
+            if not inserted[0]:
                 request.set_pile_id(0)
-                waiting_area.enter(info.car_id, charge_mode)
+                waiting_area.enter(info[1].car_id, charge_mode)
                 break
             else:
-                request = get_charging_request(info.car_id)
                 request.set_pile_id(inserted.second)
