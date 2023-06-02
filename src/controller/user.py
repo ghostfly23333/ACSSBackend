@@ -128,6 +128,7 @@ def query_queuing():
     @api {get} /user/query/queue 查询排队信息
     @apiName QueryQueue
     @apiGroup User
+    @apiParam {String} user_id 用户id
     @apiParam {String} car_id 车辆id
     @apiSuccess {String} car_id 车辆id
     @apiSuccess {String} pile_id 充电桩id
@@ -165,7 +166,7 @@ def alter_amount():
     @apiName AlterAmount
     @apiGroup User
     @apiParam {String} user_id 用户id
-    @apiParam {String} bill_id 账单id
+    @apiParam {String} car_id 车辆id
     @apiParam {Double} amount 电量
     @apiSuccessExample {json} Success-Response:
       HTTP/1.1 200 OK
@@ -177,7 +178,7 @@ def alter_amount():
       HTTP/1.1 200 OK
       {
         "status": 1,
-        "message": "账单不存在"
+        "message": "车辆不存在"
       }
     @apiErrorExample {json} Error-Response:
       HTTP/1.1 200 OK
@@ -197,7 +198,7 @@ def alter_mode():
     @apiName AlterMode
     @apiGroup User
     @apiParam {String} user_id 用户id
-    @apiParam {String} bill_id 账单id
+    @apiParam {String} car_id 车辆id
     @apiParam {Int} mode 充电模式(0:常规, 1:快速)
     @apiSuccessExample {json} Success-Response:
       HTTP/1.1 200 OK
@@ -209,7 +210,7 @@ def alter_mode():
       HTTP/1.1 200 OK
       {
         "status": 1,
-        "message": "账单不存在"
+        "message": "车辆不存在"
       }
     @apiErrorExample {json} Error-Response:
       HTTP/1.1 200 OK
@@ -222,45 +223,14 @@ def alter_mode():
 
 
 
-@app.route('/alter/end', methods=['POST'])
-def alter_end():
-    """
-    @api {post} /user/alter/end 修改结束时间
-    @apiName AlterEnd
-    @apiGroup User
-    @apiParam {String} user_id 用户id
-    @apiParam {String} bill_id 账单id
-    @apiSuccessExample {json} Success-Response:
-      HTTP/1.1 200 OK
-      {
-        "status": 0,
-        "message": "已终止"
-      }
-    @apiErrorExample {json} Error-Response:
-      HTTP/1.1 200 OK
-      {
-        "status": 1,
-        "message": "账单不存在"
-      }
-    @apiErrorExample {json} Error-Response:
-      HTTP/1.1 200 OK
-      {
-        "status": 2,
-        "message": "终止失败"
-      }
-    """
-    return 'user/alter/end'
-
-
-
 @app.route('/alter/cancel', methods=['POST'])
 def alter_cancel():
     """
-    @api {post} /user/alter/cancel 取消账单
+    @api {post} /user/alter/cancel 取消充电
     @apiName AlterCancel
     @apiGroup User
     @apiParam {String} user_id 用户id
-    @apiParam {String} bill_id 账单id
+    @apiParam {String} car_id 车辆id
     @apiSuccessExample {json} Success-Response:
       HTTP/1.1 200 OK
       {
@@ -271,7 +241,7 @@ def alter_cancel():
       HTTP/1.1 200 OK
       {
         "status": 1,
-        "message": "账单不存在"
+        "message": "车辆不存在"
       }
     @apiErrorExample {json} Error-Response:
       HTTP/1.1 200 OK

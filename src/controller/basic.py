@@ -56,7 +56,7 @@ def login():
       {
         "status": 0,
         "message": "登录成功",
-        "token": "TOKEN"
+        "token": ""
       }
     @apiErrorExample {json} Error-Response:
       HTTP/1.1 401 UNAUTHORIZED
@@ -68,5 +68,5 @@ def login():
     username=request.json.get('username')
     password=request.json.get('password')
     if(auth_login(username,password)):
-        return jsonify({"status":0,"message":"登录成功","token":"TOKEN"})
-    return jsonify({"status":1,"message":"用户名或密码错误"})
+        return jsonify({"status":0,"message":"登录成功","token":""})
+    return jsonify({"status":1,"message":"用户名或密码错误"}),401
