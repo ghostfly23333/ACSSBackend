@@ -53,8 +53,8 @@ def query_state():
                 "data": {
                     "pile_id": pile.pile_id,
                     "status": pile.status.value,
-                    "amount": pile.current_info.changed_amount,
-                    "time": pile.current_info.changed_seconds,
+                    "amount": pile.current_info.charged_amount,
+                    "time": pile.current_info.charged_seconds,
                 }
             })
         else:
