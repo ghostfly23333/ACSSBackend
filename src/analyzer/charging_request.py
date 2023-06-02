@@ -1,5 +1,5 @@
-from src.classes import ChargingRequest
-from src.classes import waiting_area
+from classes import ChargingRequest
+from classes.WaitingArea import waiting_area
 
 
 # 索引为{car_id}的请求字典

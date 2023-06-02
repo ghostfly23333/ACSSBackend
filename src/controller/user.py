@@ -1,7 +1,7 @@
 from flask import Blueprint
 from flask import request
 from flask import jsonify
-from src.analyzer.charging_request import alter_charging_mode, alter_charging_amount, cancel_charging_request
+from analyzer.charging_request import alter_charging_mode, alter_charging_amount, cancel_charging_request
 
 
 app = Blueprint('user_controller',__name__)
