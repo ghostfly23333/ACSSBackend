@@ -1,12 +1,17 @@
+from enum import Enum
+class ChargingMode(Enum):
+    Normal = 0
+    Fast = 1
+
 class ChargingRequest:
     user_id: str
     car_id: str
-    mode: int
+    mode: ChargingMode
     amount: float
     queue_num: int
     pile_id: str
 
-    def __init__(self, user_id: str, car_id: str, mode: int, amount: float):
+    def __init__(self, user_id: str, car_id: str, mode: ChargingMode, amount: float):
         self.user_id = user_id
         self.car_id = car_id
         self.mode = mode

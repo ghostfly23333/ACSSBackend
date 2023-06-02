@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Optional
+from analyzer.scheduler_call import pile_available_callback
 from threading import Lock
 lock = Lock()
 
@@ -76,6 +77,7 @@ class ChargingPile:
                 self.cars_queue.pop(0)
                 if len(self.cars_queue) == 0:
                     self.status = PileState.Idle
+                pile_available_callback(self.pile_type)
                 return uid
         return None
 

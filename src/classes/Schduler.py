@@ -18,19 +18,25 @@ class Scheduler:
         for pile in charging_piles:
             if pile.pile_type == PileType.Fast:
                 self.fast_piles_num += 1
-                self.piles[0].append(pile.pile_id)
+                self.piles[1].append(pile.pile_id)
             else:
                 self.slow_piles_num += 1
-                self.piles[1].append(pile.pile_id)
+                self.piles[0].append(pile.pile_id)
 
 
 class FIFOScheduler(Scheduler):
     def __init__(self):
         super().__init__()
 
-    def add_query(self, charge_mode, car_id) -> (bool, int):
+    def add_query(self, car_id):
         minimum_time = 1e9
         minimum_index = -1
+        request = get_charging_request(car_id)
+        if request is None:
+            return False, -1
+        
+        charge_mode = request.mode
+
         for pile_index in self.piles[charge_mode]:
             pile = charging_piles[pile_index]
             if pile.status == PileState.Idle or pile.status == PileState.Working:
@@ -44,7 +50,6 @@ class FIFOScheduler(Scheduler):
         if minimum_index == -1:
             return False, -1
         else:
-            request = get_charging_request(car_id)
             info = ChargingInfo(car_id, request.amount)
             charging_piles[minimum_index].cars_queue.append(info)
             return True, minimum_index
@@ -74,3 +79,6 @@ class FIFOScheduler(Scheduler):
                 break
             else:
                 request.set_pile_id(inserted.second)
+
+
+scheduler = FIFOScheduler()
