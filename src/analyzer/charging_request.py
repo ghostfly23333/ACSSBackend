@@ -14,9 +14,9 @@ def submit_charging_request(user_id: str, car_id: str, mode: int,
     else:
         # 提交请求
         request = ChargingRequest(user_id, car_id, mode, amount)
-        waiting_area.enter(car_id, mode)
         request.set_queue_num(generate_queue_num(mode))
         request_dict[car_id] = request
+        waiting_area.enter(car_id, mode)
         return 1
         
 
@@ -28,9 +28,9 @@ def alter_charging_mode(car_id: str, mode: int) -> int:
             # 在等候区
             request_dict[car_id].set_mode(mode)
             # 修改后重新生成排队号
-            waiting_area.exit(car_id)
-            waiting_area.enter(car_id)         
+            waiting_area.exit(car_id)    
             request_dict[car_id].set_queue_num(generate_queue_num(mode))
+            waiting_area.enter(car_id)   
             return 0
         else:
             # 在充电区
@@ -68,6 +68,9 @@ def cancel_charging_request(car_id) -> int:
 def get_charging_request(car_id: str) -> ChargingRequest: 
     return request_dict.get(car_id)
 
+def get_charging_mode(car_id: str) -> int:
+    req = request_dict.get(car_id)
+    return req.mode if req is not None else None
 
 # 生成排队号码
 def generate_queue_num(mode: int) -> int:
@@ -77,3 +80,4 @@ def generate_queue_num(mode: int) -> int:
     else:
         # 快速
         return len(waiting_area.f_charging_queue)
+    
