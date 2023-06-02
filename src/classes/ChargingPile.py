@@ -24,12 +24,14 @@ class ChangingInfo:
     changed_amount: float
     all_amount: float
     changed_seconds: float
+    waited_seconds: float
 
     def __init__(self, car_id: int, all_amount: float):
         self.car_id = car_id
         self.all_amount = all_amount
         self.changed_amount = 0
         self.changed_seconds = 0.0
+        self.waited_seconds = 0.0
 
 
 class ChargingPile:
@@ -61,6 +63,10 @@ class ChargingPile:
     # for use in timer thread, should be called every time slot
     # return car_id if a user is charged full, else return None
     def time_passed(self, seconds: float):
+        if len(self.cars_queue) > 1:
+            for waiting_car in self.cars_queue[1:]:
+                waiting_car.waited_seconds += seconds
+
         if self.current_info is not None:
             self.current_info.changed_seconds += seconds
             self.current_info.changed_amount += self.charge_speed * seconds
