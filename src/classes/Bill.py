@@ -3,6 +3,7 @@ class Bill:
         
         self.content = {
             'bill_id':None,
+            'status':None,
             'date':None,
             'pile':None,
             'car':None,
@@ -27,6 +28,7 @@ class Bill:
     
     def fill(self,bill_id:str,
                 date:str,
+                status:int,
                 pile:int,
                 car:str,
                 mode:int,
@@ -40,6 +42,7 @@ class Bill:
         
         self.content = {
             'bill_id':bill_id,
+            'status':status,
             'date':date,
             'pile':pile,
             'car':car,
@@ -55,7 +58,7 @@ class Bill:
         
     # 充电刚开始，生成初始表单，填入后返回表单引用
     def generate_request(self,bill_id,date,pile,car,mode,start_time):
-        self.fill(bill_id,date,pile,car,mode,0,0,start_time,None,0,0,0)        
+        self.fill(bill_id,date,1,pile,car,mode,0,0,start_time,None,0,0,0)        
         return self
     
 
@@ -90,8 +93,9 @@ class Bill:
         return self
     
     # 充电结束后，生成一份静态报表，存进容器
-    def persist(self,end_time,container):
+    def persist(self,end_time,status,container):
         self.real_time_generate(end_time)
+        self['status']=status
         container.insert(self)
         
     
@@ -109,7 +113,7 @@ class BillContainer:
         self.container[bill['bill_id']]=bill
     
     def find(self,bill_id):
-        return self.container[bill_id]
+        return self.container.get(bill_id)
     
     def delete(self,bill_id):
         self.container.pop(bill_id)
