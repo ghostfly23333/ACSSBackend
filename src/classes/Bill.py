@@ -2,6 +2,7 @@ class Bill:
     def __init__(self):
         
         self.content = {
+            'user_id':None,
             'bill_id':None,
             'status':None,
             'date':None,
@@ -26,7 +27,9 @@ class Bill:
     def __str__(self):
         return self.content.__str__()
     
-    def fill(self,bill_id:str,
+    def fill(self,
+                user_id:str,
+                bill_id:str,
                 date:str,
                 status:int,
                 pile:int,
@@ -41,6 +44,7 @@ class Bill:
                 total:float):
         
         self.content = {
+            'user_id':user_id,
             'bill_id':bill_id,
             'status':status,
             'date':date,
@@ -57,8 +61,9 @@ class Bill:
             }
         
     # 充电刚开始，生成初始表单，填入后返回表单引用
-    def generate_request(self,bill_id,date,pile,car,mode,start_time):
-        self.fill(bill_id,date,1,pile,car,mode,0,0,start_time,None,0,0,0)        
+    def generate_request(self,user_id,bill_id,date,pile,car,mode,start_time):
+        # todo: generate bill_id
+        self.fill(user_id,bill_id,date,1,pile,car,mode,0,0,start_time,None,0,0,0)        
         return self
     
 
@@ -109,40 +114,94 @@ class BillContainer:
     def __str__(self):
         return self.container.__str__()
     
+    def __getitem__(self, key):
+        return self.container[key]
+    
+    def __setitem__(self, key,value):
+        self.container[key]=value
+    
     def insert(self,bill):
-        self.container[bill['bill_id']]=bill
+        if bill['user_id'] not in self.container.keys():
+            self.container[bill['user_id']]={
+                bill['bill_id']:bill
+            }
+        else:
+            tmp={
+                bill['bill_id']:bill
+            }
+            self.container[bill['user_id']].update(tmp)
+        
     
-    def find(self,bill_id):
-        return self.container.get(bill_id)
+    def find_user(self,user_id):
+        return self.container.get(user_id)
     
-    def delete(self,bill_id):
-        self.container.pop(bill_id)
+    def delete_user(self,user_id):
+        self.container.pop(user_id)
+    
+    def find_bill(self,bill_id):
+        for i in self.container.values():
+            if bill_id in i.keys():
+                return i[bill_id]
+            
+        return None
+    
+    def delete_bill(self,bill_id):
+        for k,i in self.container.items():
+            key = list(i.keys())[0]
+            if key == bill_id:
+                i.pop(bill_id)
+                if not i:
+                    self.container.pop(k)
+                break
+        
     
     def update(self,bill):
-        self.container[bill['bill_id']]=bill
+        if bill['user_id'] not in self.container.keys():
+            self.container[bill['user_id']]={
+                bill['bill_id']:bill
+            }
+        else:
+            tmp={
+                bill['bill_id']:bill
+            }
+            self.container[bill['user_id']].update(tmp)
 
     def find_value(self,param,argument):
         for i in self.container.values():
             # print(i)
-            if i[param]==argument:
-                return i
-        return ValueError
+            for j in i.values():
+                if j[param]==argument:
+                    return j
+        return None
 
     def find_value_multi(self,param,argument):
         result = []
-        for i in self.container.items():
+        flag = 0
+        for k,v in self.container.items():
             # print(i)
-            if i[1][param]==argument:
-                result.append(i[1])
-        return result
+            # if i[1][param]==argument:
+            #     result.append(i[1])
+            for j in v.values():
+                # print(j)
+                if j[param]==argument:
+                    result.append(j)
+                    flag=1
+            
+        return result if flag else None
                     
     # todo: 充电结束后，有查找需求，在容器内查找静态报表
     
                     
 # con = BillContainer()
-
-# a = Bill('1','1',2,'3','0',5,5,'day1','day2',100,100)
-# print(a)
+# a = Bill()
+# a.fill('jxf','1','day1',2,'3','0',5,5,'day1','day2',100,100,0,0)
+# b = Bill()
+# b.fill('jxf','2','day1',2,'3','0',5,5,'day2','day3',100,100,0,0)
+# # print(a)
 # con.insert(a)
-# # print(con)
-# print(con.find_value('start_time','day1'))
+# con.insert(b)
+# print(list(con['jxf'].values()))
+# # con.delete_bill('1')
+# print(con)
+# for i in con.find_value_multi('date','day1'):
+#     print(i)
