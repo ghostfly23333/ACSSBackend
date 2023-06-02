@@ -1,9 +1,5 @@
-from classes import ChargingRequest
+from classes.ChargingRequest import ChargingRequest, request_dict
 from classes.WaitingArea import waiting_area
-
-
-# 索引为{car_id}的请求字典
-request_dict = {}
 
 
 # 提交充电请求( 1: 提交成功  0: 提交失败 )
@@ -16,7 +12,7 @@ def submit_charging_request(user_id: str, car_id: str, mode: int,
         request = ChargingRequest(user_id, car_id, mode, amount)
         request.set_queue_num(generate_queue_num(mode))
         request_dict[car_id] = request
-        waiting_area.enter(car_id, mode)
+        waiting_area.enter(car_id)
         return 1
         
 
@@ -63,14 +59,6 @@ def cancel_charging_request(car_id) -> int:
     else:
         return 1
         
-
-# 查找充电请求
-def get_charging_request(car_id: str) -> ChargingRequest: 
-    return request_dict.get(car_id)
-
-def get_charging_mode(car_id: str) -> int:
-    req = request_dict.get(car_id)
-    return req.mode if req is not None else None
 
 # 生成排队号码
 def generate_queue_num(mode: int) -> int:
