@@ -1,4 +1,9 @@
 from flask import Blueprint
+from flask import request
+from flask import jsonify
+from src.analyzer.charging_request import alter_charging_mode, alter_charging_amount, cancel_charging_request
+
+
 app = Blueprint('user_controller',__name__)
 
 @app.route('/charge',methods=['POST'])
@@ -187,7 +192,15 @@ def alter_amount():
         "message": "不允许修改"
       }
     """
-    return 'user/alter/amount'
+    user_id = request.json.get('user_id')
+    car_id = request.json.get('car_id')
+    amount = request.json.get('amount')
+    if alter_charging_amount(car_id, amount) == 0:
+        return jsonify({"status": 0, "message": "修改成功"})
+    elif alter_charging_amount(car_id, amount) == 1:
+        return jsonify({"status": 1, "message": "车辆不存在"})
+    else:
+        return jsonify({"status": 2, "message": "不允许修改"})
 
 
 
@@ -219,7 +232,15 @@ def alter_mode():
         "message": "不允许修改"
       }
     """
-    return 'user/alter/mode'
+    user_id = request.json.get('user_id')
+    car_id = request.json.get('car_id')
+    mode = request.json.get('mode')
+    if alter_charging_mode(car_id, mode) == 0:
+        return jsonify({"status": 0, "message": "修改成功"})
+    elif alter_charging_amount(car_id, mode) == 1:
+        return jsonify({"status": 1, "message": "车辆不存在"})
+    else:
+        return jsonify({"status": 2, "message": "不允许修改"})
 
 
 
@@ -250,4 +271,9 @@ def alter_cancel():
         "message": "不允许取消"
       }
     """
-    return 'user/alter/cancel'
+    user_id = request.json.get('user_id')
+    car_id = request.json.get('car_id')
+    if cancel_charging_request(car_id) == 0:
+        return jsonify({"status": 0, "message": "已取消"})
+    else:
+        return jsonify({"status": 1, "message": "车辆不存在"})
