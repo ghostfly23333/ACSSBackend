@@ -1,3 +1,78 @@
+from Timer import timer
+from Timer import Time
+import copy
+
+# 划分时间段
+def slice_time(start_time,cur_time,period_Start,period_end,period_attr):
+    peak,shoulder,off_peak=0,0,0
+    duration_h = (cur_time -start_time)/3600
+
+    if start_time.hour in range(period_Start,period_end):
+        if cur_time.hour in range(period_Start,period_end):
+            if period_attr == 0:#peak
+                peak+=duration_h
+            elif period_attr == 1:#shoulder
+                shoulder+=duration_h
+            else :#offpeak
+                off_peak+=duration_h
+            return start_time,peak,shoulder,off_peak
+        
+        tmp_time = timer.time_in_day(period_end,0,0)
+
+        if period_attr == 0:#peak
+            peak+=(tmp_time - start_time)/3600
+
+        elif period_attr == 1:#shoulder
+            shoulder+=(tmp_time - start_time)/3600
+        else :#offpeak
+            off_peak+=(tmp_time - start_time)/3600
+        # start_time = tmp_time
+        return tmp_time,peak,shoulder,off_peak
+    else:
+        return start_time,0,0,0
+
+def divide_into_period(start_time,cur_time):
+    duration = cur_time - start_time
+    duration_h = duration/3600
+    peak,shoulder,off_peak=0,0,0
+    if start_time.day == cur_time.day:
+        start_time,peak_inc,shoulder_inc,off_peak_inc= slice_time(start_time,cur_time,0,7,2)
+        peak+=peak_inc
+        shoulder+=shoulder_inc
+        off_peak+=off_peak_inc
+        
+        start_time,peak_inc,shoulder_inc,off_peak_inc= slice_time(start_time,cur_time,7,10,1)
+        peak+=peak_inc
+        shoulder+=shoulder_inc
+        off_peak+=off_peak_inc
+        
+        start_time,peak_inc,shoulder_inc,off_peak_inc= slice_time(start_time,cur_time,10,15,0)
+        peak+=peak_inc
+        shoulder+=shoulder_inc
+        off_peak+=off_peak_inc
+        
+        start_time,peak_inc,shoulder_inc,off_peak_inc= slice_time(start_time,cur_time,15,18,1)
+        peak+=peak_inc
+        shoulder+=shoulder_inc
+        off_peak+=off_peak_inc
+        
+        start_time,peak_inc,shoulder_inc,off_peak_inc= slice_time(start_time,cur_time,18,21,0)
+        peak+=peak_inc
+        shoulder+=shoulder_inc
+        off_peak+=off_peak_inc
+        
+        start_time,peak_inc,shoulder_inc,off_peak_inc= slice_time(start_time,cur_time,21,23,1)
+        peak+=peak_inc
+        shoulder+=shoulder_inc
+        off_peak+=off_peak_inc
+
+        start_time,peak_inc,shoulder_inc,off_peak_inc= slice_time(start_time,cur_time,23,24,2)
+        peak+=peak_inc
+        shoulder+=shoulder_inc
+        off_peak+=off_peak_inc
+        
+    return  duration_h, peak,shoulder,off_peak
+        
 class Bill:
     def __init__(self):
         
@@ -61,25 +136,24 @@ class Bill:
             }
         
     # 充电刚开始，生成初始表单，填入后返回表单引用
-    def generate_request(self,user_id,bill_id,date,pile,car,mode,start_time):
-        # todo: generate bill_id
-        self.fill(user_id,bill_id,date,1,pile,car,mode,0,0,start_time,None,0,0,0)        
+    def generate_request(self,user_id,pile,car,mode):
+        start_time = timer.time()
+        bill_id = user_id +'-'+ str(start_time)
+        date = '%02d-%02d-%02d' % (start_time.year, start_time.month, start_time.day)
+        self.fill(user_id,bill_id,date,1,pile,car,mode,0,0,start_time.stamp,None,0,0,0)        
         return self
-    
-
-    # todo：计算时间
-    # def divide_into_period(start_time,cur_time):
-        
+                      
     # 拿取信息计算价格
     def compute_price(self,cur_time):
-        cur_duration,peak,shoulder,off_peak=self.divide_into_period(self['start_time'],cur_time)
+        cur_duration,peak,shoulder,off_peak=divide_into_period(Time(self['start_time']),cur_time)
+
         if(self['mode']==0):#常规
            power=7
         else:
             power=30
-        kw_h_p=peak/power
-        kw_h_s=shoulder/power
-        kw_h_o=off_peak/power
+        kw_h_p=peak*power
+        kw_h_s=shoulder*power
+        kw_h_o=off_peak*power
         
         cur_amount = kw_h_p + kw_h_s+ kw_h_o
         cur_service = 0.8*cur_amount
@@ -88,8 +162,9 @@ class Bill:
         
     # 仍在充电时，若有实时查找需求，填入具体值，返回表单引用
     def real_time_generate(self,cur_time):
+        # cur_time = timer.time()
         cur_duration,cur_amount,cur_service,cur_charge=self.compute_price(cur_time)
-        self['end_time']=cur_time
+        self['end_time']=cur_time.stamp
         self['amount'] = cur_amount
         self['duration']=cur_duration
         self['service_cost']=cur_service
@@ -194,14 +269,15 @@ class BillContainer:
                     
 # con = BillContainer()
 # a = Bill()
-# a.fill('jxf','1','day1',2,'3','0',5,5,'day1','day2',100,100,0,0)
-# b = Bill()
-# b.fill('jxf','2','day1',2,'3','0',5,5,'day2','day3',100,100,0,0)
+# a.generate_request('jxf',1,'1',1)
 # # print(a)
-# con.insert(a)
-# con.insert(b)
-# print(list(con['jxf'].values()))
-# # con.delete_bill('1')
-# print(con)
-# for i in con.find_value_multi('date','day1'):
-#     print(i)
+# t1=timer.time()
+# t2=Time(t1.stamp+15000)
+# print(t1)
+# print(t2)
+# a.real_time_generate(t2)
+# print(a)
+# t2=Time(t1.stamp+16000)
+# a.persist(t2,0,con)
+# print(a)
+# print(list(con['jxf'].items())[0][1])
