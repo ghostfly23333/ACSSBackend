@@ -4,6 +4,7 @@ from classes.Timer import timer
 from flask import jsonify
 from analyzer.auth import register as auth_register
 from analyzer.auth import login as auth_login
+from classes.ChargingPile import charging_piles
 
 app = Blueprint('default_controller', __name__)
 
@@ -105,3 +106,29 @@ def get_time():
     """
     t = timer.time()
     return jsonify({"status": 0, "message": "获取成功", "data": t.to_dict()})
+
+@app.route('/test', methods=['POST'])
+def get_test():
+    """
+    @api {post} /test 测试接口
+    @apiName GetTest
+    @apiGroup Default
+    @apiSuccess {String} message 测试消息
+    @apiSuccessExample {json} Success-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 0,
+        "message": "测试成功"
+      }
+    """
+    res = {}
+    for key in charging_piles:
+        car_queue = charging_piles[key].cars_queue
+        car_queue_info = []
+        for car in car_queue:
+            car_id = car.car_id
+            charged_amount = car.charged_amount
+            car_info = (car_id, charged_amount)
+            car_queue_info.append(car_info)
+        res[key] = car_queue_info
+    return jsonify({"status": 0, "message": res})

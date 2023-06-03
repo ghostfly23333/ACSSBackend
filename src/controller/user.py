@@ -2,6 +2,7 @@ from flask import Blueprint
 from flask import request
 from flask import jsonify
 from analyzer.charging_request import alter_charging_mode, alter_charging_amount, cancel_charging_request
+from analyzer.charging_request import submit_charging_request
 from analyzer.__init__ import container
 
 
@@ -34,7 +35,23 @@ def charge():
         "message": "请求失败"
       }
     """
-    return 'user/charge'
+    user_id = request.json.get('user_id')
+    car_id = request.json.get('car_id')
+    mode = request.json.get('mode')
+    amount = request.json.get('amount')
+    if (submit_charging_request(user_id, car_id, mode, amount)):
+        return jsonify({
+            "status": 0,
+            "message": "充电成功",
+            "data": {
+                "bill_id": ""
+            }
+        })
+    else:
+        return jsonify({
+            "status": 1,
+            "message": "请求失败"
+        })
 
 @app.route('/query/profile', methods=['GET'])
 def query_profile():
