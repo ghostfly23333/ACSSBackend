@@ -39,7 +39,7 @@ def charge():
     car_id = request.json.get('car_id')
     mode = request.json.get('mode')
     amount = request.json.get('amount')
-    if (submit_charging_request(user_id, car_id, mode, amount)):
+    if (submit_charging_request(user_id, car_id, int(mode), float(amount))):
         return jsonify({
             "status": 0,
             "message": "充电成功",
@@ -52,6 +52,64 @@ def charge():
             "status": 1,
             "message": "请求失败"
         })
+    
+
+@app.route('/query/request', methods=['GET'])
+def query_request():
+    """
+    @api {get} /user/query/request 查询充电请求
+    @apiName QueryRequest
+    @apiGroup User
+    @apiParam {String} user_id 用户id
+    @apiSuccess {String} car_id 车辆id
+    @apiSuccessExample {json} Success-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 0,
+        "message": "查询成功",
+        "data": ["car_id_1","card_id_2"]
+      }
+    """
+    return 'user/query/request'
+
+
+
+@app.route('/query/detail', methods=['GET'])
+def query_detail():
+    """
+    @api {get} /user/query/detail 查询充电详情
+    @apiName QueryDetail
+    @apiGroup User
+    @apiParam {String} user_id 用户id
+    @apiParam {String} car_id 车辆id
+    @apiSuccess {String} car_id 车辆id
+    @apiSuccess {Int} mode 充电模式(0:常规, 1:快速)
+    @apiSuccess {Int} status 车辆状态 (0:等待中, 1:充电中)
+    @apiSuccess {String} pile_id 充电桩id
+    @apiSuccess {Double} request_amount 电量
+    @apiSuccess {Double} charged_amount 已充电量
+    @apiSuccess {Double} duration 时间
+    @apiSuccess {Double} remain 剩余时间
+    @apiSuccess {String} start_time 开始时间
+    @apiSuccessExample {json} Success-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 0,
+        "message": "查询成功",
+        "data": {
+          "car_id": "",
+          "mode": 0,
+          "status": 0,
+          "pile_id": "",
+          "request_amount": 0,
+          "charged_amount": 0,
+          "duration": 0,
+          "remain": 0,
+          "start_time": "",
+        }
+      }
+    """
+    return 'user/query/detail'
 
 @app.route('/query/profile', methods=['GET'])
 def query_profile():

@@ -1,7 +1,7 @@
 import time
 import threading
 
-SYSTEM_TIME_RATIO = 500
+SYSTEM_TIME_RATIO = 20
 
 class Time:
     stamp:float
