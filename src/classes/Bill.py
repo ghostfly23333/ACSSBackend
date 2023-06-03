@@ -1,6 +1,5 @@
 from Timer import timer
 from Timer import Time
-import copy
 
 # 划分时间段
 def slice_time(start_time,cur_time,period_Start,period_end,period_attr):
@@ -72,6 +71,23 @@ def divide_into_period(start_time,cur_time):
         off_peak+=off_peak_inc
         
     return  duration_h, peak,shoulder,off_peak
+
+# 拿取信息计算价格
+def compute_price(start_time,cur_time,mode):
+    cur_duration,peak,shoulder,off_peak=divide_into_period(start_time,cur_time)
+
+    if(mode==0):#常规
+        power=7
+    else:
+        power=30
+    kw_h_p=peak*power
+    kw_h_s=shoulder*power
+    kw_h_o=off_peak*power
+    
+    cur_amount = kw_h_p + kw_h_s+ kw_h_o
+    cur_service = 0.8*cur_amount
+    cur_charge = 1*kw_h_p+0.7*kw_h_s+0.4*kw_h_o
+    return cur_duration,cur_amount,cur_service,cur_charge
         
 class Bill:
     def __init__(self):
@@ -143,27 +159,27 @@ class Bill:
         self.fill(user_id,bill_id,date,1,pile,car,mode,0,0,start_time.stamp,None,0,0,0)        
         return self
                       
-    # 拿取信息计算价格
-    def compute_price(self,cur_time):
-        cur_duration,peak,shoulder,off_peak=divide_into_period(Time(self['start_time']),cur_time)
+    # # 拿取信息计算价格
+    # def compute_price(self,cur_time):
+    #     cur_duration,peak,shoulder,off_peak=divide_into_period(Time(self['start_time']),cur_time)
 
-        if(self['mode']==0):#常规
-           power=7
-        else:
-            power=30
-        kw_h_p=peak*power
-        kw_h_s=shoulder*power
-        kw_h_o=off_peak*power
+    #     if(self['mode']==0):#常规
+    #        power=7
+    #     else:
+    #         power=30
+    #     kw_h_p=peak*power
+    #     kw_h_s=shoulder*power
+    #     kw_h_o=off_peak*power
         
-        cur_amount = kw_h_p + kw_h_s+ kw_h_o
-        cur_service = 0.8*cur_amount
-        cur_charge = 1*kw_h_p+0.7*kw_h_s+0.4*kw_h_o
-        return cur_duration,cur_amount,cur_service,cur_charge
+    #     cur_amount = kw_h_p + kw_h_s+ kw_h_o
+    #     cur_service = 0.8*cur_amount
+    #     cur_charge = 1*kw_h_p+0.7*kw_h_s+0.4*kw_h_o
+    #     return cur_duration,cur_amount,cur_service,cur_charge
         
     # 仍在充电时，若有实时查找需求，填入具体值，返回表单引用
     def real_time_generate(self,cur_time):
         # cur_time = timer.time()
-        cur_duration,cur_amount,cur_service,cur_charge=self.compute_price(cur_time)
+        cur_duration,cur_amount,cur_service,cur_charge=compute_price(Time(self['start_time']),cur_time,self['mode'])
         self['end_time']=cur_time.stamp
         self['amount'] = cur_amount
         self['duration']=cur_duration
@@ -272,12 +288,12 @@ class BillContainer:
 # a.generate_request('jxf',1,'1',1)
 # # print(a)
 # t1=timer.time()
-# t2=Time(t1.stamp+15000)
+# t2=Time(t1.stamp+12000)
 # print(t1)
 # print(t2)
 # a.real_time_generate(t2)
 # print(a)
-# t2=Time(t1.stamp+16000)
+# t2=Time(t1.stamp+13000)
 # a.persist(t2,0,con)
 # print(a)
 # print(list(con['jxf'].items())[0][1])
