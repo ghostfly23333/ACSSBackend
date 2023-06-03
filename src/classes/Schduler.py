@@ -36,21 +36,22 @@ class WaitingArea:
     def enter(self, car_id: str):
         mode = get_charging_mode(car_id)
         if mode == ChargingMode.Normal:
-            self.f_charging_queue.append(car_id)
+            self.t_charging_queue.append(car_id)
         else:
             self.f_charging_queue.append(car_id)
         try_request(mode)
-        
+
 
     # 指定车辆退出等候区
     def exit(self, car_id: str):
         mode = get_charging_mode(car_id)
         try:
             if mode == ChargingMode.Normal:
-                self.f_charging_queue.remove(car_id)
-            else:
                 self.t_charging_queue.remove(car_id)
+            else:
+                self.f_charging_queue.remove(car_id)
         except ValueError:
+            print("exit: ValueError")
             pass
 
     # 判断指定车辆是否在等候区
@@ -61,18 +62,27 @@ class WaitingArea:
     
 
     def get_first(self, mode: ChargingMode):
-        requests = self.f_charging_queue if mode == ChargingMode.Fast else self.t_charging_queue
-        sorted(requests, key=lambda x: requests[x].queue_num)
-        return requests[0] if len(requests) != 0 else None
+        #print(mode == ChargingMode.Fast)
+        #print(mode, ChargingMode.Fast)
+        queue = self.f_charging_queue if mode == ChargingMode.Fast else self.t_charging_queue
+        requests = list(get_charging_request(x) for x in queue)
+        sorted(requests, key=lambda x: x.queue_num)
+        #print(len(self.f_charging_queue), len(self.t_charging_queue))
+        #print(len(requests))
+        return requests[0].car_id if len(requests) != 0 else None
 
 def try_request(mode:ChargingMode):
     if mode is None:
         return
-    if waiting_area.calling_availale() and is_vacant(mode):
+    result1 = waiting_area.calling_availale()
+    result2 = is_vacant(mode)
+    if result1 and result2:
         r = waiting_area.get_first(mode)
-        scheduler.add_query(r)
+        result = scheduler.add_query(r)
+        if result[0]:
+            waiting_area.exit(r)
 
-    
+
 def pile_available_callback(mode: ChargingMode):
     try_request(mode)
 
@@ -83,10 +93,10 @@ def start_calling_callback():
     try_request(ChargingMode.Fast)
     try_request(ChargingMode.Normal)
 
-def is_vacant(mode: int) -> bool:
-    if mode == PileType.Fast:
+def is_vacant(mode: ChargingMode) -> bool:
+    if mode == ChargingMode.Fast:
         return charging_piles["1"].is_vacant() or charging_piles["2"].is_vacant()
-    elif mode == PileType.Normal:
+    elif mode == ChargingMode.Normal:
         return charging_piles["3"].is_vacant() or charging_piles["4"].is_vacant() or charging_piles["5"].is_vacant()
     else:
         return False
@@ -126,21 +136,21 @@ class FIFOScheduler(Scheduler):
         
         charge_mode = request.mode
 
-        for pile_index in self.piles[charge_mode]:
+        for pile_index in self.piles[charge_mode.value]:
             pile = charging_piles[pile_index]
-            if pile.status == PileState.Idle or pile.status == PileState.Working:
+            if pile.is_vacant():
                 pile_time = 0
-                if len(pile.cars_queue) < 2:
-                    for info in pile.cars_queue:
-                        pile_time = pile_time + (info.all_amount - info.charged_amount) / pile.charge_speed
-                    if minimum_time > pile_time:
-                        minimum_time = pile_time
-                        minimum_index = pile.pile_id
+                for info in pile.cars_queue:
+                    pile_time = pile_time + (info.all_amount - info.charged_amount) / pile.charge_speed
+                if minimum_time > pile_time:
+                    minimum_time = pile_time
+                    minimum_index = pile.pile_id
         if minimum_index == -1:
             return False, -1
         else:
             info = ChargingInfo(car_id, request.amount)
             charging_piles[minimum_index].cars_queue.append(info)
+            request.set_pile_id(minimum_index)
             return True, minimum_index
 
     def shutdown_pile(self, charge_mode, pile_id):
@@ -150,7 +160,7 @@ class FIFOScheduler(Scheduler):
             info_list.append((get_charging_request(info.car_id).queue_num,
                               ChargingInfo(info.car_id, info.all_amount - info.charged_amount)))
         charging_piles[pile_id].cars_queue.clear()
-        for pile_index in self.piles[charge_mode]:
+        for pile_index in self.piles[charge_mode.value]:
             pile = charging_piles[pile_index]
             if pile.pile_id == pile_id:
                 continue
@@ -160,14 +170,14 @@ class FIFOScheduler(Scheduler):
             pile.cars_queue.pop(1)
         info_list.sort(key=lambda x: x[0][1:])
         for info in info_list:
-            inserted = self.add_query(charge_mode, info[1].car_id)
+            inserted = self.add_query(info[1].car_id)
             request = get_charging_request(info[1].car_id)
             if not inserted[0]:
                 request.set_pile_id(0)
-                waiting_area.enter(info[1].car_id, charge_mode)
+                waiting_area.enter(info[1].car_id)
                 break
             else:
-                request.set_pile_id(inserted.second)
+                request.set_pile_id(info[1].car_id)
 
 
 scheduler = FIFOScheduler()

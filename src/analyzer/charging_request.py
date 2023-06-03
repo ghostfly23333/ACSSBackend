@@ -1,4 +1,4 @@
-from classes.ChargingRequest import ChargingRequest, request_dict
+from classes.ChargingRequest import ChargingRequest, request_dict, ChargingMode
 from classes.Schduler import waiting_area
 from classes.Timer import timer
 
@@ -10,7 +10,7 @@ def submit_charging_request(user_id: str, car_id: str, mode: int,
         return 0
     else:
         # 提交请求
-        request = ChargingRequest(user_id, car_id, mode, amount)
+        request = ChargingRequest(user_id, car_id, ChargingMode(mode), amount)
         request.set_queue_num(generate_queue_num())
         request_dict[car_id] = request
         waiting_area.enter(car_id)
@@ -23,7 +23,7 @@ def alter_charging_mode(car_id: str, mode: int) -> int:
     if car_id in request_dict:
         if waiting_area.is_waiting(car_id):
             # 在等候区
-            request_dict[car_id].set_mode(mode)
+            request_dict[car_id].set_mode(ChargingMode(mode))
             # 修改后重新生成排队号
             waiting_area.exit(car_id)    
             request_dict[car_id].set_queue_num(generate_queue_num())
