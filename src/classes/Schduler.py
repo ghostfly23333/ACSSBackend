@@ -42,7 +42,7 @@ class WaitingArea:
         try_request(mode)
         
 
-    # 指定车辆退出等候区，并修改排在其后的车辆的排队号码
+    # 指定车辆退出等候区
     def exit(self, car_id: str):
         mode = get_charging_mode(car_id)
         try:
