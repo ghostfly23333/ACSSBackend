@@ -1,4 +1,5 @@
 from enum import Enum
+
 class ChargingMode(Enum):
     Normal = 0
     Fast = 1
@@ -8,7 +9,7 @@ class ChargingRequest:
     car_id: str
     mode: ChargingMode
     amount: float
-    queue_num: int
+    queue_num: str
     pile_id: str
 
     def __init__(self, user_id: str, car_id: str, mode: ChargingMode, amount: float):
@@ -16,7 +17,6 @@ class ChargingRequest:
         self.car_id = car_id
         self.mode = mode
         self.amount = amount
-        self.queue_num = 0      # 未分配排队号
 
     def set_mode(self, mode: int):
         self.mode = mode
@@ -24,7 +24,7 @@ class ChargingRequest:
     def set_amount(self, amount: float):
         self.amount = amount
     
-    def set_queue_num(self, queue_num: int):
+    def set_queue_num(self, queue_num: str):
         self.queue_num = queue_num
     
     def set_pile_id(self, pile_id: str):
