@@ -4,12 +4,10 @@ from classes.UserInfo import UserInfo
 
 def register(username, password):
     if username in users:
-        # print("用户名已存在，请选择其他用户名。")
         return False
 
     new_user = UserInfo(username, password, 0)
     users[username] = new_user
-    # print("注册成功！")
     return True
 
 
