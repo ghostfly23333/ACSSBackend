@@ -1,7 +1,7 @@
 import time
 import threading
 
-SYSTEM_TIME_RATIO = 20
+SYSTEM_TIME_RATIO = 500
 
 class Time:
     stamp:float
@@ -101,7 +101,7 @@ class Timer:
         interval = interval / self._ratio
         uid = self.__task_id__()
         t = threading.Timer(interval, self.__callback__, args = (uid,))
-        self._tasks[uid] = (t, callback, (args,))
+        self._tasks[uid] = (t, callback, args)
         t.start()
         return uid
     
@@ -122,7 +122,7 @@ class Timer:
                     func(*args)
             
 
-timer = Timer(SYSTEM_TIME_RATIO)
+timer = Timer(SYSTEM_TIME_RATIO,Time.make("2023-06-04 05:55:00"))
 
 # example
 # if __name__ == "__main__":

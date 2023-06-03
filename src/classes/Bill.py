@@ -1,5 +1,4 @@
-from Timer import timer
-from Timer import Time
+from classes.Timer import timer, Time
 
 # 划分时间段
 def slice_time(start_time,cur_time,period_Start,period_end,period_attr):

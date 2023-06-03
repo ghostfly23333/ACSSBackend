@@ -3,6 +3,7 @@ scripts/apidoc
 controllers/__pycache__
 analyzer/__pycache__
 adapter/__pycache__
+test/output.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
