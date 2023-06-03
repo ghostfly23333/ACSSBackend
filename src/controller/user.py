@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask import request
 from flask import jsonify
 from analyzer.charging_request import alter_charging_mode, alter_charging_amount, cancel_charging_request
-from analyzer.charging_request import submit_charging_request
+from analyzer.charging_request import submit_charging_request, query_charging_detail, query_charging_request
 from analyzer.__init__ import container
 
 
@@ -18,15 +18,11 @@ def charge():
     @apiParam {String} car_id 车辆id
     @apiParam {Int} mode 充电模式(0:常规, 1:快速)
     @apiParam {Double} amount 电量
-    @apiSuccess {String} bill_id 账单id
     @apiSuccessExample {json} Success-Response:
       HTTP/1.1 200 OK
       {
         "status": 0,
-        "message": "充电成功",
-        "data": {
-          "bill_id": ""
-        }
+        "message": "请求成功",
       }
     @apiErrorExample {json} Error-Response:
       HTTP/1.1 200 OK
@@ -43,14 +39,11 @@ def charge():
         return jsonify({
             "status": 0,
             "message": "充电成功",
-            "data": {
-                "bill_id": ""
-            }
         })
     else:
         return jsonify({
             "status": 1,
-            "message": "请求失败"
+            "message": "重复的请求"
         })
     
 
@@ -70,7 +63,12 @@ def query_request():
         "data": ["car_id_1","card_id_2"]
       }
     """
-    return 'user/query/request'
+    user_id = request.args.get('user_id')
+    return jsonify({
+        "status": 0,
+        "message": "查询成功",
+        "data": query_charging_request(user_id)
+    })
 
 
 
@@ -109,7 +107,21 @@ def query_detail():
         }
       }
     """
-    return 'user/query/detail'
+    user_id = request.args.get('user_id')
+    car_id = request.args.get('car_id')
+    info = query_charging_detail(car_id)
+    if info is not None:
+        return jsonify({
+            "status": 0,
+            "message": "查询成功",
+            "data": info
+        })
+    else:
+        return jsonify({
+            "status": 1,
+            "message": "车辆不存在"
+        })
+
 
 @app.route('/query/profile', methods=['GET'])
 def query_profile():

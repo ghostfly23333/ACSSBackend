@@ -1,4 +1,5 @@
 from classes.ChargingRequest import ChargingRequest, request_dict, ChargingMode
+from classes.ChargingPile import ChargingInfo, get_pile
 from classes.Schduler import waiting_area
 from classes.Timer import timer
 
@@ -52,17 +53,52 @@ def alter_charging_amount(car_id: str, amount: float) -> int:
         return 1
 
 
+def query_charging_request(user_id: str) -> list:
+    l = []
+    for car in request_dict:
+        if request_dict[car].user_id == user_id:
+            l.append(car)
+    return l
+
+## 查询详单
+def query_charging_detail(car_id: str) -> ChargingInfo:
+    if car_id in request_dict:
+        request = request_dict[car_id]
+        pile = get_pile(request.pile_id)
+        info = pile.get_charging_info(car_id)
+        return {
+            "car_id": car_id,
+            "mode": request.mode.value,
+            "status": info['status'] if info is not None else -1,
+            "pile_id": request.pile_id,
+            "request_amount": request.amount,
+            "charged_amount": info['charged_amount'] if info is not None else 0,
+            "duration": info['charged_seconds'] if info is not None else 0,
+            "start_time": info['start_time'] if info is not None else "",
+            "remain": info['time_remain'] if info is not None else -1
+        }
+    else:
+        return None
+
+
 ## 取消充电请求( 0: 取消成功  1: 车辆不存在 )
 def cancel_charging_request(car_id) -> int:
     if car_id in request_dict:
         waiting_area.exit(car_id)
-        del request_dict[car_id]
+        end_charging_request(car_id)
         return 0
     else:
         return 1
         
 
-# 根据系统当前时间生成排队号码( 6:00:00 -> 060000 )
+# 根据系统当前时间生成排队号码(2023-01-01 00:00:00 -> 20230101060000 )
 def generate_queue_num() -> str:
     now = timer.time()
-    return "{:02d}{:02d}{:02d}".format(now.hour, now.minute, now.second)
+    return "{:04d}{:02d}{:02d}{:02d}{:02d}{:02d}".format(now.year,now.month,now.day,now.hour, now.minute, now.second)
+
+# 移除充电请求，生成账单
+def end_charging_request(car_id: str):
+    if car_id in request_dict:
+        # TODO: 生成账单
+
+        del request_dict[car_id]

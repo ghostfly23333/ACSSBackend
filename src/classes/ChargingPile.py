@@ -31,6 +31,7 @@ class ChargingInfo:
     charged_seconds: float
     waited_seconds: float
     start_time: Time
+    status: int
     charge_speed: float
 
     def __init__(self, car_id: str, all_amount: float):
@@ -79,14 +80,19 @@ class ChargingInfo:
         cur = timer.time()
         return self.all_amount / self.charge_speed - (cur - self.start_time)
     
+    def current(self):
+        self.update()
+        return self.to_dict()
+
     # to dict
     def to_dict(self) -> dict:
-        self.update()
         return {
             "car_id": self.car_id,
             "status": self.status,
             "all_amount": self.all_amount,
             "queue_num": self.queue_num,
+            "start_time": self.start_time.to_string() if self.start_time is not None else "",
+            "time_remain": self.time_remain(),
             "charged_amount": self.charged_amount,
             "charged_seconds": self.charged_seconds,
         }
@@ -187,17 +193,26 @@ class ChargingPile:
             self.task_info = None
             self.cars_queue = queue.PriorityQueue()
             return l
-        
+    
+
+    def get_charging_info(self, car_id: str) -> Optional[ChargingInfo]:
+        with self.process_lock:
+            if self.task_info is not None and self.task_info.car_id == car_id:
+                return self.task_info.current()
+            for item in self.cars_queue.queue:
+                if item.car_id == car_id:
+                    return item.current()
+            return None
     
     def detail(self):
         res = {}
         with self.process_lock:
             if self.task_info is not None:
-                res['charging'] = self.task_info.to_dict()
+                res['charging'] = self.task_info.current()
             else:
                 res['charging'] = None
             l = list(self.cars_queue.queue)
-            res['waiting'] = [item.to_dict() for item in l]
+            res['waiting'] = [item.current() for item in l]
             return res
 
         
@@ -226,3 +241,10 @@ charging_piles = {
     "T2": ChargingPile("T2", PileType.Normal),
     "T3": ChargingPile("T3", PileType.Normal),
 }
+
+
+def get_pile(pile_id: str) -> Optional[ChargingPile]:
+    if pile_id in charging_piles:
+        return charging_piles[pile_id]
+    else:
+        return None

@@ -63,7 +63,7 @@ class Timer:
             self._base_time = self._system__base_time
         else:
             self._base_time = base.stamp
-            print(self._base_time)
+
         self._ratio = _ratio
         self._task_id = 0
         self._tasks = {}
