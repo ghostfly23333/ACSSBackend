@@ -2,9 +2,10 @@
 
 from classes.ChargingPile import charging_piles, PileType, PileState, ChargingInfo, PileType, charging_piles, pile_callbacks
 from classes.ChargingRequest import get_charging_request, ChargingMode, get_charging_mode
-from threading import Lock
+import threading
+from classes.Timer import timer, Time
 
-calling_lock = Lock()
+calling_lock = threading.Lock()
 
 class WaitingArea:
     size: int
@@ -71,16 +72,16 @@ class WaitingArea:
         #print(len(requests))
         return requests[0].car_id if len(requests) != 0 else None
 
+# 尝试叫号
+try_lock = threading.Lock()
 def try_request(mode:ChargingMode):
     if mode is None:
         return
-    result1 = waiting_area.calling_availale()
-    result2 = is_vacant(mode)
-    if result1 and result2:
-        r = waiting_area.get_first(mode)
-        result = scheduler.add_query(r)
-        if result[0]:
-            waiting_area.exit(r)
+    if waiting_area.calling_availale():
+        with try_lock:
+            r = waiting_area.get_first(mode)
+            if r is not None and is_vacant(mode):
+                scheduler.add_query(r)
 
 
 def pile_available_callback(mode: ChargingMode):
@@ -95,9 +96,9 @@ def start_calling_callback():
 
 def is_vacant(mode: ChargingMode) -> bool:
     if mode == ChargingMode.Fast:
-        return charging_piles["1"].is_vacant() or charging_piles["2"].is_vacant()
+        return charging_piles["F1"].is_vacant() or charging_piles["F2"].is_vacant()
     elif mode == ChargingMode.Normal:
-        return charging_piles["3"].is_vacant() or charging_piles["4"].is_vacant() or charging_piles["5"].is_vacant()
+        return charging_piles["T1"].is_vacant() or charging_piles["T2"].is_vacant() or charging_piles["T3"].is_vacant()
     else:
         return False
 
@@ -139,36 +140,39 @@ class FIFOScheduler(Scheduler):
         for pile_index in self.piles[charge_mode.value]:
             pile = charging_piles[pile_index]
             if pile.is_vacant():
-                pile_time = 0
-                for info in pile.cars_queue:
-                    pile_time = pile_time + (info.all_amount - info.charged_amount) / pile.charge_speed
+                pile_time = pile.expected_finish_time()
                 if minimum_time > pile_time:
                     minimum_time = pile_time
                     minimum_index = pile.pile_id
         if minimum_index == -1:
             return False, -1
         else:
-            info = ChargingInfo(car_id, request.amount)
-            charging_piles[minimum_index].cars_queue.append(info)
             request.set_pile_id(minimum_index)
-            return True, minimum_index
+            print(f'{timer.time().to_string()} new car: {car_id}')
+            if charging_piles[minimum_index].queue_car(car_id, request.amount):
+                waiting_area.exit(car_id)
+                return True, minimum_index
+            else:
+                return False, -1
 
     def shutdown_pile(self, charge_mode, pile_id):
         info_list = list()
-        for info in charging_piles[pile_id].cars_queue:
-            # TODO: generate bill
-            info_list.append((get_charging_request(info.car_id).queue_num,
-                              ChargingInfo(info.car_id, info.all_amount - info.charged_amount)))
-        charging_piles[pile_id].cars_queue.clear()
+        # TODO : wirte generate bill in end_charing() at ChargingPile.py
+        to_schedule_list = charging_piles[pile_id].shutdown()
+        for info in to_schedule_list:
+            info_list.append((get_charging_request(info.car_id).queue_num, 
+                             ChargingInfo(info.car_id, info.all_amount - info.charged_amount)))
+        
         for pile_index in self.piles[charge_mode.value]:
             pile = charging_piles[pile_index]
             if pile.pile_id == pile_id:
                 continue
-            if len(pile.cars_queue) > 1:
-                info = pile.cars_queue[1]
-                info_list.append((get_charging_request(info.car_id).queue_num, info))
-            pile.cars_queue.pop(1)
+            pile_queue = pile.clear_queue()
+            for q in pile_queue:
+                info_list.append((get_charging_request(q.car_id).queue_num, q))
+
         info_list.sort(key=lambda x: x[0][1:])
+
         for info in info_list:
             inserted = self.add_query(info[1].car_id)
             request = get_charging_request(info[1].car_id)

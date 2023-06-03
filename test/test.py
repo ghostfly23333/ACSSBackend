@@ -65,15 +65,20 @@ with open('2.csv', 'r') as file:
 '''
     生成 JSON 请求
 '''
+for item in event_list:
+    print(item)
 file = open('output.txt', 'w')
+
+time_url = "http://127.0.0.1:10443/time"
+headers = {
+    'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
+    'Content-Type': 'application/json'
+}
+time_payload = json.dumps({
+    })
 while(1):
-    time_url = "http://127.0.0.1:10443/time"
-    headers = {
-        'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
-        'Content-Type': 'application/json'
-    }
-    time_payload = json.dumps({
-        })
+    if len(event_list) == 0:
+        break
     response = requests.request("GET", time_url, headers=headers, data=time_payload)
     now_stamp = json.loads(response.text)['data']['stamp']
    # print(now_stamp)
@@ -152,4 +157,4 @@ while(1):
             })
         response = requests.request("POST", test_url, headers=headers, data=test_payload)
         print(response.text.encode('utf8').decode('unicode_escape'), file=file)
-    time_.sleep(1)
+    time_.sleep(0.2)

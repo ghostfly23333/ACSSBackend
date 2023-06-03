@@ -121,14 +121,10 @@ def get_test():
         "message": "测试成功"
       }
     """
+    print(f'******************* {timer.time().to_string()} **************************')
     res = {}
+    res['time'] = timer.time().to_string()
     for key in charging_piles:
-        car_queue = charging_piles[key].cars_queue
-        car_queue_info = []
-        for car in car_queue:
-            car_id = car.car_id
-            charged_amount = car.charged_amount
-            car_info = (car_id, charged_amount)
-            car_queue_info.append(car_info)
-        res[key] = car_queue_info
+        res[key] = charging_piles[key].detail()
+    print(res)
     return jsonify({"status": 0, "message": res})
