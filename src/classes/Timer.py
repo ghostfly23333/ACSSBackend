@@ -90,6 +90,11 @@ class Timer:
         cur = time.time()
         time_pass = cur - self._system__base_time
         return Time(self._base_time + time_pass * self._ratio)
+    
+    def time_in_day(self,hour,minute,second = 0):
+        cur = self.time()
+        return Time.make(f'{cur.year}-{cur.month}-{cur.day} {hour}:{minute}:{second}')
+
 
     # 创建定时任务
     def create_task(self, interval, callback, args = None):
