@@ -35,11 +35,21 @@ class WaitingArea:
             self.calling = True
         start_calling_callback()
 
-
     def calling_availale(self):
         with calling_lock:
             return self.calling
-    
+        
+    def result(self) -> str:
+        waiting_cars = self.f_charging_queue + self.t_charging_queue
+        sorted(waiting_cars, key=lambda x: get_charging_request(x).queue_num)
+        result = ""
+        for car_id in waiting_cars:
+            request = get_charging_request(car_id)
+            my_tuple = (car_id, request.mode, int(request.amount))
+            if car_id != waiting_cars[0]:
+                result += '-'            
+            result += '(' + ', '.join(map(str, my_tuple)) + ')'
+
     # 指定车辆进入等候区
     def enter(self, car_id: str):
         mode = get_charging_mode(car_id)
@@ -156,8 +166,10 @@ class FIFOScheduler(Scheduler):
 
         for pile_index in self.piles[charge_mode.value]:
             pile = get_pile(pile_index)
-            if pile.is_vacant():
-                pile_time = pile.expected_finish_time()
+            if pile.is_vacant():             
+                pile_time = pile.expected_finish_time()  
+                if car_id == '301_01_V5':
+                    print(pile_index + ': ' + str(pile_time))                            
                 if minimum_time > pile_time:
                     minimum_time = pile_time
                     minimum_index = pile.pile_id
