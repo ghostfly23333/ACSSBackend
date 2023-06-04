@@ -254,6 +254,13 @@ class ChargingPile:
     def is_vacant(self) -> bool:
         with self.lock:
             return self.status != PileState.Error and len(self.cars_queue) == 0
+    
+    def get_maximal_available(self) -> int:
+        result = 0
+        if self.task_info is None:
+            result += 1
+        result += 1 - len(self.cars_queue)
+        return result
 
 charging_piles = {
     "F1": ChargingPile("F1", PileType.Fast),
