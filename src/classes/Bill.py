@@ -1,4 +1,5 @@
 from classes.Timer import timer, Time
+from classes.ChargingRequest import ChargingMode
 
 # 划分时间段
 def slice_time(start_time,cur_time,period_Start,period_end,period_attr):
@@ -75,7 +76,7 @@ def divide_into_period(start_time,cur_time):
 def compute_price(start_time,cur_time,mode):
     cur_duration,peak,shoulder,off_peak=divide_into_period(start_time,cur_time)
 
-    if(mode==0):#常规
+    if(mode==ChargingMode.Normal):#常规
         power=7
     else:
         power=30
