@@ -157,7 +157,7 @@ def query_waitlist():
         "message": "token已过期"
       }
     """
-    pile_id = request.json.get('pile_id')
+    pile_id = request.args.get('pile_id')
     if pile_id is None or not isinstance(pile_id, str):
         return jsonify({
             "status": 1,
@@ -224,8 +224,8 @@ def query_report():
         "message": "token已过期"
       }
     """
-    start = request.json.get('start')
-    end = request.json.get('end')
+    start = request.args.get('start')
+    end = request.args.get('end')
     duration,amount,service,charge,total=0,0,0,0,0
     for bill in container.values():
         content=bill.content
