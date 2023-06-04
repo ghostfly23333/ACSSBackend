@@ -168,8 +168,8 @@ class FIFOScheduler(Scheduler):
             pile = get_pile(pile_index)
             if pile.is_vacant():             
                 pile_time = pile.expected_finish_time()  
-                if car_id == '301_01_V5':
-                    print(pile_index + ': ' + str(pile_time))                            
+                if pile_time < 5.0:
+                    pile_time = 0.0                     
                 if minimum_time > pile_time:
                     minimum_time = pile_time
                     minimum_index = pile.pile_id
