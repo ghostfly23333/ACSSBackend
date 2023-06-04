@@ -88,7 +88,12 @@ def compute_price(start_time,cur_time,mode):
     cur_service = 0.8*cur_amount
     cur_charge = 1*kw_h_p+0.7*kw_h_s+0.4*kw_h_o
     return cur_duration,cur_amount,cur_service,cur_charge
-        
+
+class Bill_status:
+    Submitted = 0
+    Charging = 1
+    # Error = 2  
+          
 class Bill:
     def __init__(self):
         
@@ -152,8 +157,8 @@ class Bill:
             }
         
     # 充电刚开始，生成初始表单，填入后返回表单引用
-    def generate_request(self,user_id,pile,car,mode):
-        start_time = timer.time()
+    def generate_request(self,user_id,pile,car,mode,start_time):
+        # start_time = timer.time()
         bill_id = user_id +'-'+ str(start_time)
         date = '%02d-%02d-%02d' % (start_time.year, start_time.month, start_time.day)
         self.fill(user_id,bill_id,date,1,pile,car,mode,0,0,start_time.stamp,None,0,0,0)        
