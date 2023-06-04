@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 app = Blueprint('admin_controller', __name__)
 
 from classes.ChargingPile import charging_piles, PileState
+from analyzer.__init__ import container
 
 @app.route('/query/state', methods=['GET'])
 def query_state():
@@ -220,4 +221,27 @@ def query_report():
         "message": "token已过期"
       }
     """
-    return 'admin/query/report'
+    start = request.json.get('start')
+    end = request.json.get('end')
+    duration,amount,service,charge,total=0,0,0,0,0
+    for bill in container.values():
+        content=bill.content
+        if content['start_time']>=start and content['end_time']<=end:
+            duration+=content['duration']
+            amount+=content['amount']
+            service+=content['service_cost']
+            charge+=content['charge']
+            total+=content['total']
+    return jsonify({
+        "status": 0,
+        "message": "查询成功",
+        "data": {
+          "start": start,
+          "end": end,
+          "duration": duration,
+          "amount": amount,
+          "service": service,
+          "charge": charge,
+          "total": total
+        }
+      })
