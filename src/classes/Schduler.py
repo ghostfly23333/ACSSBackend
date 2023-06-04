@@ -1,6 +1,6 @@
 # WARNING: NOT TESTED YET
 
-from classes.ChargingPile import charging_piles, PileType, PileState, ChargingInfo, PileType, charging_piles, pile_callbacks
+from classes.ChargingPile import charging_piles, PileType, PileState, ChargingInfo, PileType, charging_piles, pile_callbacks, get_pile
 from classes.ChargingRequest import get_charging_request, ChargingMode, get_charging_mode
 import threading
 from classes.Timer import timer, Time
@@ -63,13 +63,9 @@ class WaitingArea:
     
 
     def get_first(self, mode: ChargingMode):
-        #print(mode == ChargingMode.Fast)
-        #print(mode, ChargingMode.Fast)
         queue = self.f_charging_queue if mode == ChargingMode.Fast else self.t_charging_queue
         requests = list(get_charging_request(x) for x in queue)
         sorted(requests, key=lambda x: x.queue_num)
-        #print(len(self.f_charging_queue), len(self.t_charging_queue))
-        #print(len(requests))
         return requests[0].car_id if len(requests) != 0 else None
 
 # 尝试叫号
@@ -138,7 +134,7 @@ class FIFOScheduler(Scheduler):
         charge_mode = request.mode
 
         for pile_index in self.piles[charge_mode.value]:
-            pile = charging_piles[pile_index]
+            pile = get_pile(pile_index)
             if pile.is_vacant():
                 pile_time = pile.expected_finish_time()
                 if minimum_time > pile_time:
@@ -155,6 +151,22 @@ class FIFOScheduler(Scheduler):
             else:
                 return False, -1
 
+    def get_maximum_available(self, charge_mode) -> int:
+        result = 0
+        for pile_index in self.piles[charge_mode.value]:
+            pile = get_pile(pile_index)
+            result += pile.get_maximum_available()
+        return result
+
+
+    def add_querys(self, car_ids) -> list:
+        requests = list(get_charging_request(x) for x in car_ids)
+        requests.sort(key=lambda x: x.amount)
+        results = list()
+        for request in requests:
+            results.append((request.car_id, self.add_query(request.car_id)))
+        return results
+
     def shutdown_pile(self, charge_mode, pile_id):
         info_list = list()
         # TODO : wirte generate bill in end_charing() at ChargingPile.py
@@ -164,7 +176,7 @@ class FIFOScheduler(Scheduler):
                              ChargingInfo(info.car_id, info.all_amount - info.charged_amount)))
         
         for pile_index in self.piles[charge_mode.value]:
-            pile = charging_piles[pile_index]
+            pile = get_pile(pile_index)
             if pile.pile_id == pile_id:
                 continue
             pile_queue = pile.clear_queue()
