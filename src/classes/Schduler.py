@@ -1,20 +1,27 @@
 # WARNING: NOT TESTED YET
 
 from classes.ChargingPile import charging_piles, PileType, PileState, ChargingInfo, PileType, charging_piles, pile_callbacks, get_pile
-from classes.ChargingRequest import get_charging_request, ChargingMode, get_charging_mode
+from classes.ChargingRequest import get_charging_request, ChargingMode, get_charging_mode, get_charging_queue_num
 import threading
+from enum import Enum
 from classes.Timer import timer, Time
 
+class ScheduleMode(Enum):
+    NORMAL = 0
+    GLOBAL = 1
+    GLOBAL_IGNORE_MODE = 2
+
+schedule_mode = ScheduleMode.GLOBAL
+
 calling_lock = threading.Lock()
+queue_lock = threading.Lock()
 
 class WaitingArea:
-    size: int
     calling: bool
     f_charging_queue: list
     t_charging_queue: list
 
-    def __init__(self, size: int):
-        self.size = size
+    def __init__(self):
         self.calling = True
         self.f_charging_queue = []
         self.t_charging_queue = []
@@ -36,71 +43,85 @@ class WaitingArea:
     # 指定车辆进入等候区
     def enter(self, car_id: str):
         mode = get_charging_mode(car_id)
-        if mode == ChargingMode.Normal:
-            self.t_charging_queue.append(car_id)
-        else:
-            self.f_charging_queue.append(car_id)
+        with queue_lock:
+            if mode == ChargingMode.Normal:
+                self.t_charging_queue.append(car_id)
+            else:
+                self.f_charging_queue.append(car_id)
         try_request(mode)
 
 
     # 指定车辆退出等候区
     def exit(self, car_id: str):
         mode = get_charging_mode(car_id)
-        try:
-            if mode == ChargingMode.Normal:
-                self.t_charging_queue.remove(car_id)
-            else:
-                self.f_charging_queue.remove(car_id)
-        except ValueError:
-            print("exit: ValueError")
-            pass
+        with queue_lock:
+            try:
+                if mode == ChargingMode.Normal:
+                    self.t_charging_queue.remove(car_id)
+                else:
+                    self.f_charging_queue.remove(car_id)
+            except ValueError:
+                print("exit: ValueError")
+                pass
 
     # 判断指定车辆是否在等候区
     def is_waiting(self, car_id: str) -> bool:
-        if car_id in self.t_charging_queue or car_id in self.f_charging_queue:
-            return True
-        return False
+        with queue_lock:
+            if car_id in self.t_charging_queue or car_id in self.f_charging_queue:
+                return True
+            return False
     
 
-    def get_first(self, mode: ChargingMode):
-        queue = self.f_charging_queue if mode == ChargingMode.Fast else self.t_charging_queue
-        requests = list(get_charging_request(x) for x in queue)
-        sorted(requests, key=lambda x: x.queue_num)
-        return requests[0].car_id if len(requests) != 0 else None
+    def get_first(self, mode: ChargingMode, num: int = 1):
+        requests = []
+        with queue_lock:
+            if mode == ChargingMode.Ignore or mode == ChargingMode.Fast:
+                for x in self.f_charging_queue:
+                    requests.append(x)
+            if mode == ChargingMode.Ignore or mode == ChargingMode.Normal:
+                for x in self.t_charging_queue:
+                    requests.append(x)
+            if len(requests) < num:
+                return []
+            
+            sorted(requests, key=lambda x: get_charging_queue_num(x))
+            return requests[:num]
 
 # 尝试叫号
 try_lock = threading.Lock()
 def try_request(mode:ChargingMode):
     if mode is None:
         return
+    # reset mode
+    mode = ChargingMode.Ignore if schedule_mode == ScheduleMode.GLOBAL_IGNORE_MODE else mode
+    # reset num
+    num = 1 if schedule_mode == ScheduleMode.NORMAL else vacant_num(mode)
+    print(f'vacant num: {num}')
     if waiting_area.calling_availale():
         with try_lock:
-            r = waiting_area.get_first(mode)
-            if r is not None and is_vacant(mode):
-                scheduler.add_query(r)
+            firsts = waiting_area.get_first(mode,num)
+            if len(firsts) > 0:
+                scheduler.add_querys(firsts)
 
 
 def pile_available_callback(mode: ChargingMode):
     try_request(mode)
 
 pile_callbacks.append(pile_available_callback)
-
       
-def start_calling_callback():
+def start_calling_callback(mode: ChargingMode):
     try_request(ChargingMode.Fast)
     try_request(ChargingMode.Normal)
 
-def is_vacant(mode: ChargingMode) -> bool:
-    if mode == ChargingMode.Fast:
-        return charging_piles["F1"].is_vacant() or charging_piles["F2"].is_vacant()
-    elif mode == ChargingMode.Normal:
-        return charging_piles["T1"].is_vacant() or charging_piles["T2"].is_vacant() or charging_piles["T3"].is_vacant()
-    else:
-        return False
+def vacant_num(mode: ChargingMode) -> bool:
+    available = 0
+    if mode == ChargingMode.Fast or mode == ChargingMode.Ignore:
+        available += scheduler.get_maximum_available(ChargingMode.Fast)
+    if mode == ChargingMode.Normal or mode == ChargingMode.Ignore:
+        available += scheduler.get_maximum_available(ChargingMode.Normal)
+    return available
 
-waiting_area = WaitingArea(6)
-
-
+waiting_area = WaitingArea()
 
 class Scheduler:
     fast_piles_num: int

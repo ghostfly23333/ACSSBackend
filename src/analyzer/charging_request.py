@@ -92,15 +92,19 @@ def query_charging_request(user_id: str) -> list:
 def query_charging_detail(car_id: str) -> ChargingInfo:
     if car_id in request_dict:
         request = request_dict[car_id]
-        pile = get_pile(request.pile_id)
+        pile_id = request.pile_id
+        pile = get_pile(pile_id)
+        
         info = None
         if pile is not None:
             info = pile.get_charging_info(car_id)
+        else:
+            pile_id = ""
         return {
             "car_id": car_id,
             "mode": request.mode.value,
             "status": info['status'] if info is not None else -1,
-            "pile_id": request.pile_id,
+            "pile_id": pile_id,
             "request_amount": request.amount,
             "charged_amount": info['charged_amount'] if info is not None else 0,
             "duration": info['charged_seconds'] if info is not None else 0,

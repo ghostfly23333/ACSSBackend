@@ -4,6 +4,7 @@ from enum import Enum
 class ChargingMode(Enum):
     Normal = 0
     Fast = 1
+    Ignore = 2
 
 
 class ChargingRequest:

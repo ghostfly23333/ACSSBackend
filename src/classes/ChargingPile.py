@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional
 from classes.Timer import timer, Time
-from classes.ChargingRequest import get_charging_queue_num
+from classes.ChargingRequest import get_charging_queue_num, ChargingMode
 from classes.ChargingRequest import get_charging_queue_num, get_charging_mode
 from classes.Bill import compute_price
 import threading
@@ -135,6 +135,19 @@ class ChargingPile:
         self.cars_queue = list()
         self.task_id = -1
         self.lock = threading.Lock()
+
+    def cancel_charging(self, car_id: str):
+        self.lock.acquire()
+        if self.task_info is not None and self.task_info.car_id == car_id:
+            self.lock.release()
+            timer.cancel_task(self.task_id)
+        
+        for item in self.cars_queue:
+            if item.car_id == car_id:
+                self.cars_queue.remove(item)
+                item.end()
+                self.lock.release()
+            
     
     def end_charging(self):
         print(f'{timer.time().to_string()} end charging: {self.task_info.car_id}')
@@ -142,6 +155,7 @@ class ChargingPile:
         if self.task_info is not None:
             self.task_info.end()
             self.task_info = None
+            self.task_id = -1
 
         if self.status != PileState.Error:
             if len(self.cars_queue) == 0:
@@ -152,7 +166,7 @@ class ChargingPile:
                 self.start_charging()
 
             for func in pile_callbacks:
-                func(self.pile_type)
+                func(ChargingMode.Fast if self.pile_type == PileType.Fast else ChargingMode.Normal)
     
     def start_charging(self):
         with self.lock:
@@ -255,12 +269,12 @@ class ChargingPile:
         with self.lock:
             return self.status != PileState.Error and len(self.cars_queue) == 0
     
-    def get_maximal_available(self) -> int:
+    def get_maximum_available(self) -> int:
         result = 0
         if self.task_info is None:
             result += 1
         result += 1 - len(self.cars_queue)
-        return result
+        return result if result > 0 else 0
 
 charging_piles = {
     "F1": ChargingPile("F1", PileType.Fast),
