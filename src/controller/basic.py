@@ -5,6 +5,7 @@ from flask import jsonify
 from analyzer.auth import register as auth_register
 from analyzer.auth import login as auth_login
 from classes.ChargingPile import charging_piles
+from classes.Schduler import waiting_area
 
 app = Blueprint('default_controller', __name__)
 
@@ -146,6 +147,7 @@ def get_result():
     """
     res = {}
     res['time'] = timer.time().to_string()
+    res['waiting_area'] = waiting_area.result()
     for key in charging_piles:
         res[key] = charging_piles[key].result()  
     return jsonify({"status": 0, "message": res})
