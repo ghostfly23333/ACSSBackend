@@ -1,9 +1,10 @@
 from enum import Enum
 from typing import Optional
 from classes.Timer import timer, Time
-from classes.ChargingRequest import get_charging_queue_num, ChargingMode
-from classes.ChargingRequest import get_charging_queue_num, get_charging_mode
-from classes.Bill import compute_price
+from classes.ChargingRequest import get_charging_queue_num, ChargingMode, get_charging_mode,get_charging_request
+from classes.Bill import compute_price,Bill,Bill_status
+from analyzer.__init__ import container
+
 import threading
 
 class PileState(Enum):
@@ -150,10 +151,15 @@ class ChargingPile:
             
     
     def end_charging(self):
-        print(f'{timer.time().to_string()} end charging: {self.task_info.car_id}')
+        end_time = timer.time()
+        print(f'{end_time.to_string()} end charging: {self.task_info.car_id}')
         self.lock.acquire()
         if self.task_info is not None:
             self.task_info.end()
+            request = get_charging_request(self.task_info.car_id)
+            bill=Bill()
+            bill.generate_request(request.user_id,self.pile_id,self.task_info.car_id,request.mode,self.task_info.start_time)
+            bill.persist(end_time,Bill_status.Submitted,container)
             self.task_info = None
             self.task_id = -1
 
