@@ -93,7 +93,7 @@ while(1):
                 # 提交充电申请
                 if item[3] == '0':
                     # 取消充电
-                    url = "http://127.0.0.1:10443/alter/cancel"
+                    url = "http://127.0.0.1:10443/user/alter/cancel"
                     payload = json.dumps({
                         "user_id": "user1",
                         "car_id": item[1],
@@ -112,7 +112,7 @@ while(1):
                 print(response.text.encode('utf8').decode('unicode_escape'),file=file)
             elif item[0] == 'B':
                 # 充电桩故障
-                url = 'http://127.0.0.1:10443/alter/pile'
+                url = 'http://127.0.0.1:10443/admin/alter/pile'
                 status = 2 if item[3] == '0' else 1
                 payload = json.dumps({
                     "pile_id": item[1],
@@ -124,7 +124,7 @@ while(1):
                 # 变更充电请求
                 if item[3] == '-1':
                     # 充电量不变 更改充电模式
-                    url = 'http://127.0.0.1:10443/alter/mode'
+                    url = 'http://127.0.0.1:10443/user/alter/mode'
                     mode = 1 if item[2] == 'F' else 0
                     payload = json.dumps({
                         "user_id": "user1",
@@ -133,7 +133,7 @@ while(1):
                     })
                 elif item[2] == 'O':
                     # 充电量变更
-                    url = 'http://127.0.0.1:10443/alter/amount'
+                    url = 'http://127.0.0.1:10443/user/alter/amount'
                     payload = json.dumps({
                         "user_id": "user1",
                         "car_id": item[1],
@@ -141,8 +141,14 @@ while(1):
                     })
                 else:
                     # 充电量和充电模式都变更
-                    # TODO: 未实现
-                    print("充电量和充电模式都变更")
+                    url = 'http://127.0.0.1:10443/user/alter/mode_and_amount'
+                    mode = 1 if item[2] == 'F' else 0
+                    payload = json.dumps({
+                        "user_id": "user1",
+                        "car_id": item[1],
+                        "mode": mode,
+                        "amount": float(item[3])
+                    })
                 response = requests.request("POST", url, headers=headers, data=payload)
                 print(response.text.encode('utf8').decode('unicode_escape'), file=file)
             # print(key, value)
