@@ -127,5 +127,26 @@ def get_test():
     res['time'] = timer.time().to_string()
     for key in charging_piles:
         res[key] = charging_piles[key].detail()
-    print(res)
+    print(res)    
     return jsonify({"status": 0, "message": res})
+
+@app.route('/result', methods=['POST'])
+def get_result():
+    """
+    @api {post} /result 获取三元组结果接口
+    @apiName GetResult
+    @apiGroup Default
+    @apiSuccess {String} message 三元组结果消息
+    @apiSuccessExample {json} Success-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 0,
+        "message": "获取结果成功"
+      }
+    """
+    res = {}
+    res['time'] = timer.time().to_string()
+    for key in charging_piles:
+        res[key] = charging_piles[key].result()  
+    return jsonify({"status": 0, "message": res})
+
