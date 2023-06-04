@@ -1,5 +1,5 @@
 from classes.ChargingRequest import ChargingRequest, request_dict, ChargingMode
-from classes.ChargingPile import ChargingInfo, get_pile
+from classes.ChargingPile import ChargingInfo, get_pile, is_charging
 from classes.Schduler import waiting_area
 from classes.Timer import timer
 
@@ -32,7 +32,11 @@ def alter_charging_mode(car_id: str, mode: int) -> int:
             return 0
         else:
             # 在充电区
-            # TODO: 不允许修改，可取消充电后 离开 / 重新进入等候区排队
+            # 取消充电后重新进入等候区排队
+            user_id = request_dict[car_id].user_id
+            amount = request_dict[car_id].amount
+            submit_charging_request(user_id, car_id, mode, amount)
+            cancel_charging_request(car_id)
             return 2
     else:
         return 1
@@ -47,11 +51,35 @@ def alter_charging_amount(car_id: str, amount: float) -> int:
             return 0
         else:
             # 在充电区
-            # TODO: 不允许修改，可取消充电后 离开 / 重新进入等候区排队
+            # 取消充电后重新进入等候区排队    
+            user_id = request_dict[car_id].user_id
+            mode = int(request_dict[car_id].mode)
+            submit_charging_request(user_id, car_id, mode, amount)
+            cancel_charging_request(car_id)
             return 2
     else:
         return 1
-
+    
+## 取消充电请求( 0: 取消成功  1: 车辆不存在 )
+def cancel_charging_request(car_id) -> int:
+    if car_id in request_dict:
+        if is_charging(car_id) is False:
+            # 未开始充电
+            if waiting_area.is_waiting(car_id):
+                # 在等候区
+                waiting_area.exit(car_id)      
+            else:
+                # 在排队区
+                # TODO 退出排队区
+                pass      
+            del request_dict[car_id]
+        else:
+            # 已终止充电过程
+            end_charging_request(car_id)        
+        return 0
+    else:
+        return 1
+    
 
 def query_charging_request(user_id: str) -> list:
     l = []
@@ -82,17 +110,7 @@ def query_charging_detail(car_id: str) -> ChargingInfo:
     else:
         return None
 
-
-## 取消充电请求( 0: 取消成功  1: 车辆不存在 )
-def cancel_charging_request(car_id) -> int:
-    if car_id in request_dict:
-        waiting_area.exit(car_id)
-        end_charging_request(car_id)
-        return 0
-    else:
-        return 1
         
-
 # 根据系统当前时间生成排队号码(2023-01-01 00:00:00 -> 20230101060000 )
 def generate_queue_num() -> str:
     now = timer.time()

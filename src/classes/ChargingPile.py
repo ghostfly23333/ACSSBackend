@@ -269,3 +269,16 @@ def get_pile(pile_id: str) -> Optional[ChargingPile]:
         return charging_piles[pile_id]
     else:
         return None
+    
+# 判断一辆车是否正在充电，若正在充电，则终止
+def is_charging(car_id: str) -> bool:
+    for _, pile in charging_piles.items():
+        if pile.get_charging_info(car_id) is not None:
+            pile.end_charging(car_id)
+            return True           
+    return False 
+
+
+
+    
+
