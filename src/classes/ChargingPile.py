@@ -108,7 +108,7 @@ class ChargingInfo:
         }
     
     def to_tuple_str(self) -> str: 
-        my_tuple = (self.car_id, round(self.charged_amount, 3), round(self.fee, 3))
+        my_tuple = (self.car_id, "{:.2f}".format(self.charged_amount), "{:.2f}".format(self.fee))
         return '(' + ', '.join(map(str, my_tuple)) + ')'
 
 pile_callbacks = []
@@ -186,7 +186,7 @@ class ChargingPile:
                 print(f'start charging: {self.task_info.car_id} {self.task_info.all_amount}')
                 self.status = PileState.Working
                 interval = self.task_info.all_amount / self.charge_speed
-                print(f'charge_speed:{self.charge_speed} interval:{interval}')
+                print(f'charge_speed: {self.charge_speed} interval:{interval}')
                 self.task_info.start(self.charge_speed)
                 self.task_id = timer.create_task(interval, self.end_charging, args=None)
 
@@ -250,11 +250,12 @@ class ChargingPile:
         res = {}
         with self.lock:
             if self.task_info is not None:
-                res['charging'] = self.task_info.current_result()
+                res['charging_area'] = self.task_info.current_result()
             else:
-                res['charging'] = None
+                res['charging_area'] = None
             l = list(self.cars_queue)
-            res['waiting'] = [item.current_result for item in l]
+            for item in l:
+                res['queuing_area'] = item.current_result()
             return res
 
     def clear_queue(self):
@@ -301,7 +302,7 @@ def get_pile(pile_id: str) -> Optional[ChargingPile]:
 def is_charging(car_id: str) -> bool:
     for _, pile in charging_piles.items():
         if pile.get_charging_info(car_id) is not None:
-            pile.end_charging(car_id)
+            pile.end_charging()
             return True           
     return False 
 
