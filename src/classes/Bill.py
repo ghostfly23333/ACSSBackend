@@ -2,6 +2,7 @@ from classes.Timer import timer, Time
 from classes.ChargingRequest import ChargingMode
 # from Timer import timer, Time
 # from ChargingRequest import ChargingMode
+# from flask import jsonify
 
 # 划分时间段
 def slice_time(start_time,cur_time,period_Start,period_end,period_attr):
@@ -307,4 +308,5 @@ class BillContainer:
 # t2=Time(t1.stamp+13000)
 # a.persist(t2,0,con)
 # print(a)
-# print(con.find_user_bill('jxf','1'))
+# print()
+# print(jsonify(con.find_user_bill('jxf','1')))
