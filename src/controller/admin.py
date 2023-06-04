@@ -164,12 +164,12 @@ def query_waitlist():
         cars_queue = pile.cars_queque
         cars_data = []
         for car_changingInfo in cars_queue[1:]: #不含正在充电的充电桩
-            cars_data.append(jsonify({
+            cars_data.append({
                 "pile_id": pile_id,
                 "car" : car_changingInfo.car_id,
                 "status": 0,
                 "time"  : car_changingInfo.waited_seconds
-            }))
+            })
         return jsonify({
             "status": 0,
             "message": "查询成功",
