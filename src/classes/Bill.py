@@ -79,7 +79,7 @@ def divide_into_period(start_time,cur_time):
 def compute_price(start_time,cur_time,mode):
     cur_duration,peak,shoulder,off_peak=divide_into_period(start_time,cur_time)
 
-    if(mode==ChargingMode.Normal):#常规
+    if(mode==ChargingMode.Normal.value):#常规
         power=7
     else:
         power=30
@@ -159,12 +159,35 @@ class Bill:
             'total':total,
             }
         
+    def to_dict(self):
+        return {
+            'user_id':self['user_id'],
+            'bill_id':self['bill_id'],
+            'status':self['status'],
+            'date':self['date'],
+            'car':self['car'],
+            'detail':{
+                'pile':self['pile'],
+                'mode':self['mode'],
+                'amount':self['amount'],
+                'duration':self['duration'],
+                'start_time':Time(self['start_time']).to_string(),
+                'end_time':Time(self['end_time']).to_string(),
+            },
+            'cost':{
+                'service':self['service_cost'],
+                'charge':self['charge'],
+                'total':self['total'],
+            }
+        }
+    
+        
     # 充电刚开始，生成初始表单，填入后返回表单引用
-    def generate_request(self,user_id,pile,car,mode,start_time):
+    def generate_request(self,user_id,pile,car,mode,amount,start_time:Time):
         # start_time = timer.time()
-        bill_id = user_id +'-'+ str(start_time)
+        bill_id = f'{user_id}_{int(start_time.stamp * 1000)}'
         date = '%02d-%02d-%02d' % (start_time.year, start_time.month, start_time.day)
-        self.fill(user_id,bill_id,date,1,pile,car,mode,0,0,start_time.stamp,None,0,0,0)        
+        self.fill(user_id,bill_id,date,1,pile,car,mode,amount,0,start_time.stamp,None,0,0,0)        
         return self
                       
     # # 拿取信息计算价格
@@ -189,7 +212,7 @@ class Bill:
         # cur_time = timer.time()
         cur_duration,cur_amount,cur_service,cur_charge=compute_price(Time(self['start_time']),cur_time,self['mode'])
         self['end_time']=cur_time.stamp
-        self['amount'] = cur_amount
+        # self['amount'] = cur_amount
         self['duration']=cur_duration
         self['service_cost']=cur_service
         self['charge']=cur_charge
@@ -218,6 +241,9 @@ class BillContainer:
     
     def __setitem__(self, key,value):
         self.container[key]=value
+
+    def add_user(self,user_id):
+        self.container[user_id]=dict()
     
     def insert(self,bill):
         if bill['user_id'] not in self.container.keys():

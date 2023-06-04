@@ -15,3 +15,6 @@ for user_id, password in users_info.items():
 users["root"] = UserInfo("root", "123456",1)
 
 container = BillContainer()
+container.add_user("user1")
+container.add_user("user2")
+container.add_user("user3")

@@ -165,7 +165,7 @@ class ChargingPile:
             self.total_amount += self.task_info.charged_amount
             request = get_charging_request(self.task_info.car_id)
             bill=Bill()
-            bill.generate_request(request.user_id,self.pile_id,self.task_info.car_id,request.mode,self.task_info.start_time)
+            bill.generate_request(request.user_id,self.pile_id,self.task_info.car_id,request.mode.value,self.task_info.charged_amount,self.task_info.start_time)
             bill.persist(end_time,Bill_status.Submitted,container)
             del_charging_request(self.task_info.car_id)
             self.task_info = None

@@ -143,6 +143,7 @@ def query_profile():
             {
               "id": "",
               "date": "",
+              "car": "",
               "cost": 0,
             }
           ]
@@ -155,7 +156,30 @@ def query_profile():
         "message": "token已过期"
       }
     """
-    return 'user/query/profile'
+    user_id = request.args.get('user_id')
+    bills = container.find_user(str(user_id))
+    data = []
+    if bills is not None:
+      for bill in bills:
+          data.append({
+              "id": bills[bill]['bill_id'],
+              "date": bills[bill]['date'],
+              "car": bills[bill]['car'],
+              "cost": bills[bill]['total']
+          })
+      return jsonify({
+          "status": 0,
+          "message": "获取成功",
+          "data": {
+              "user_id": user_id,
+              "bill": data
+          }
+      })
+    else:
+      return jsonify({
+          "status": 1,
+          "message": "用户不存在"
+      })
 
 
 @app.route('/query/bill', methods=['GET'])
@@ -211,16 +235,17 @@ def query_bill():
         "message": "账单不存在"
       }
     """
-    user_id = request.json.get('user_id')
-    bill_id = request.json.get('bill_id')
+    user_id = request.args.get('user_id')
+    bill_id = request.args.get('bill_id')
     # if cur_bill['bill_id'] !=bill_id :
     #     return jsonify(cur_bill.content)
     # else:
     # 暂时不太清楚该怎么确认是实时还是静态，暂定都是查静态报表
-    bill = container.find(bill_id)
-    return jsonify(bill.content)
-    
-    # return 'user/query/bill'
+    bill = container.find_user_bill(user_id,bill_id)
+    if bill is None:
+        return jsonify({"status":1,"message":"账单不存在"})
+    else:
+      return jsonify({"status":0,"message":"查询成功","data":bill.to_dict()})
 
 
 
@@ -339,6 +364,8 @@ def alter_mode():
     else:
         return jsonify({"status": 2, "message": "不允许修改"})
 
+
+
 @app.route('/alter/mode_and_amount', methods=['POST'])
 def alter_mode_and_amout():
     """
@@ -385,6 +412,8 @@ def alter_mode_and_amout():
         return jsonify({"status": 4, "message": "车辆不存在"})
     else:
         return jsonify({"status": 5, "message": "不允许修改"})
+
+
 
 @app.route('/alter/cancel', methods=['POST'])
 def alter_cancel():
