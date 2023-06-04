@@ -46,6 +46,12 @@ def get_charging_request(car_id: str) -> ChargingRequest:
     else:
         return None
     
+def get_charging_request_user(car_id: str) -> str:
+    if car_id in request_dict:
+        return request_dict[car_id].user_id
+    else:
+        return None
+    
 def get_charging_queue_num(car_id: str) -> str:
     req = request_dict.get(car_id)
     return req.queue_num if req is not None else None
@@ -54,3 +60,10 @@ def get_charging_queue_num(car_id: str) -> str:
 def get_charging_mode(car_id: str) -> ChargingMode:
     req = request_dict.get(car_id)
     return req.mode if req is not None else None
+
+def del_charging_request(car_id: str):
+    if car_id in request_dict:
+        del request_dict[car_id]
+        return True
+    else:
+        return False

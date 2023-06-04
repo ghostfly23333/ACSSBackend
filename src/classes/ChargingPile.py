@@ -1,7 +1,8 @@
 from enum import Enum
 from typing import Optional
 from classes.Timer import timer, Time
-from classes.ChargingRequest import get_charging_queue_num, ChargingMode, get_charging_mode,get_charging_request
+from classes.ChargingRequest import del_charging_request
+from classes.ChargingRequest import get_charging_queue_num, ChargingMode, get_charging_mode,get_charging_request,get_charging_request_user
 from classes.Bill import compute_price,Bill,Bill_status
 from analyzer.__init__ import container
 
@@ -97,6 +98,7 @@ class ChargingInfo:
     def to_dict(self) -> dict:
         return {
             "car_id": self.car_id,
+            "user_id": get_charging_request_user(self.car_id),
             "status": self.status,
             "all_amount": self.all_amount,
             "queue_num": self.queue_num,
@@ -119,9 +121,10 @@ class ChargingPile:
     charge_speed: float
     status: PileState
     cars_queue: list
-
+    total_amount: float
     task_info: ChargingInfo
     task_id: int
+    start_time: Time
     lock: threading.Lock
 
     def __init__(self, pile_id: str, pile_type: PileType):
@@ -133,6 +136,8 @@ class ChargingPile:
         # runtime data
         self.status = PileState.Idle
         self.task_info = None
+        self.total_amount = 0.0
+        self.start_time = timer.time()
         self.cars_queue = list()
         self.task_id = -1
         self.lock = threading.Lock()
@@ -141,12 +146,13 @@ class ChargingPile:
         self.lock.acquire()
         if self.task_info is not None and self.task_info.car_id == car_id:
             self.lock.release()
-            timer.cancel_task(self.task_id)
+            timer.cancel_task(self.task_id, run = True)
         
         for item in self.cars_queue:
             if item.car_id == car_id:
                 self.cars_queue.remove(item)
                 item.end()
+                del_charging_request(car_id)
                 self.lock.release()
             
     
@@ -156,12 +162,15 @@ class ChargingPile:
         self.lock.acquire()
         if self.task_info is not None:
             self.task_info.end()
+            self.total_amount += self.task_info.charged_amount
             request = get_charging_request(self.task_info.car_id)
             bill=Bill()
             bill.generate_request(request.user_id,self.pile_id,self.task_info.car_id,request.mode,self.task_info.start_time)
             bill.persist(end_time,Bill_status.Submitted,container)
+            del_charging_request(self.task_info.car_id)
             self.task_info = None
             self.task_id = -1
+            
 
         if self.status != PileState.Error:
             if len(self.cars_queue) == 0:
@@ -215,6 +224,7 @@ class ChargingPile:
     def shutdown(self):
         with self.lock:
             self.status = PileState.Error
+            self.start_time = None
             if self.task_id != -1:
                 timer.cancel_task(self.task_id)
                 self.task_id = -1
@@ -234,6 +244,11 @@ class ChargingPile:
                 if item.car_id == car_id:
                     return item.current()
             return None
+        
+    def get_waiting_list(self) -> list:
+        with self.lock:
+            l = list(self.cars_queue)
+            return [item.current() for item in l]
     
     def detail(self):
         res = {}
@@ -244,6 +259,10 @@ class ChargingPile:
                 res['charging'] = None
             l = list(self.cars_queue)
             res['waiting'] = [item.current() for item in l]
+
+            res['status'] = self.status.value
+            res['amount'] = self.total_amount + (self.task_info.charged_amount if self.task_info is not None else 0) + sum([item.charged_amount for item in l])
+            res['time'] = timer.time() - self.start_time if self.pile_type != PileState.Error and self.start_time is not None else 0
             return res
     
     def result(self):
@@ -266,7 +285,7 @@ class ChargingPile:
     def restart(self):
         if self.status != PileState.Error:
             return
-        
+        self.start_time = timer.time()
         self.cars_queue = list()
         self.task_id = -1
         self.status = PileState.Idle
@@ -301,7 +320,6 @@ def get_pile(pile_id: str) -> Optional[ChargingPile]:
 def is_charging(car_id: str) -> bool:
     for _, pile in charging_piles.items():
         if pile.get_charging_info(car_id) is not None:
-            pile.end_charging(car_id)
             return True           
     return False 
 

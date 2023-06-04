@@ -11,7 +11,7 @@ class ScheduleMode(Enum):
     GLOBAL = 1
     GLOBAL_IGNORE_MODE = 2
 
-schedule_mode = ScheduleMode.GLOBAL
+schedule_mode = ScheduleMode.NORMAL
 
 calling_lock = threading.Lock()
 queue_lock = threading.Lock()
@@ -63,6 +63,10 @@ class WaitingArea:
             except ValueError:
                 print("exit: ValueError")
                 pass
+
+    def get_waiting_list(self):
+        with queue_lock:
+            return list(self.f_charging_queue + self.t_charging_queue)
 
     # 判断指定车辆是否在等候区
     def is_waiting(self, car_id: str) -> bool:

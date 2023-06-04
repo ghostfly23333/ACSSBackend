@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
-
+from analyzer.charging_request import query_waiting_list
 from classes.ChargingRequest import ChargingMode
 from classes.Schduler import scheduler
+from classes.ChargingPile import charging_piles
 
 app = Blueprint('admin_controller', __name__)
 
@@ -50,27 +51,14 @@ def query_state():
 
     if pile_id in charging_piles:
         pile = charging_piles[pile_id]
-        if pile.current_info is not None:
-            return jsonify({
-                "status": 0,
-                "message": "查询成功",
-                "data": {
-                    "pile_id": pile.pile_id,
-                    "status": pile.status.value,
-                    "amount": pile.current_info.charged_amount,
-                    "time": pile.current_info.charged_seconds,
-                }
-            })
-        else:
-            return jsonify({
-                "status": 0,
-                "message": "查询成功",
-                "data": {
-                    "pile_id": pile.pile_id,
-                    "status": pile.status.value,
-                }
-            })
-
+        res = pile.detail()
+        res['pile_id'] = pile_id
+        return jsonify({
+            "status": 0,
+            "message": "查询成功",
+            "data": res,
+        })
+    
     return jsonify({
         "status": 1,
         "message": "充电桩不存在",
@@ -124,9 +112,39 @@ def alter_pile():
     })
 
 
-
 @app.route('/query/waitlist', methods=['GET'])
 def query_waitlist():
+    """
+    @api {get} /admin/query/waitlist 查询等待区
+    @apiName QueryWaitlist
+    @apiGroup Admin
+    @apiSuccess {String} car_id 车辆id
+    @apiSuccess {Int} mode 充电模式 (1:快充, 0:慢充)
+    @apiSuccess {Double} amount 充电量
+    @apiSuccessExample {json} Success-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 0,
+        "message": "查询成功",
+        "data": [
+          {
+            "car_id": "",
+            "mode": 0,
+            "amount": 0
+          }
+        ]
+      }
+    """
+    l = query_waiting_list()
+    return jsonify({
+        "status": 0,
+        "message": "查询成功",
+        "data": l,
+    })
+
+
+@app.route('/query/pile/waitlist', methods=['GET'])
+def query_pile_waitlist():
     """
     @api {get} /admin/query/pile/waitlist 查询充电桩等待队列
     @apiName QueryWaitlist
@@ -165,23 +183,15 @@ def query_waitlist():
         })
     if pile_id in charging_piles:
         pile = charging_piles[pile_id]
-        cars_queue = pile.cars_queque
-        cars_data = []
-        for car_changingInfo in cars_queue[1:]: #不含正在充电的充电桩
-            cars_data.append({
-                "pile_id": pile_id,
-                "car" : car_changingInfo.car_id,
-                "status": 0,
-                "time"  : car_changingInfo.waited_seconds
-            })
+        waiting_list = pile.get_waiting_list()
         return jsonify({
             "status": 0,
             "message": "查询成功",
-            "data" : cars_data,
+            "data" : waiting_list,
         })
     return jsonify({
         "status": 1,
-        "message": "token已过期",
+        "message": "充电桩不存在",
     })
 
 
