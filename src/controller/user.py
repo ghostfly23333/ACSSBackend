@@ -339,7 +339,52 @@ def alter_mode():
     else:
         return jsonify({"status": 2, "message": "不允许修改"})
 
-
+@app.route('/alter/mode_and_amount', methods=['POST'])
+def alter_mode_and_amout():
+    """
+    @api {post} /user/alter/mode 修改充电模式
+    @apiName AlterMode
+    @apiGroup User
+    @apiParam {String} user_id 用户id
+    @apiParam {String} car_id 车辆id
+    @apiParam {Int} mode 充电模式(0:常规, 1:快速)
+    @apiParam {Double} amount 电量
+    @apiSuccessExample {json} Success-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 0,
+        "message": "修改成功"
+      }
+    @apiErrorExample {json} Error-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 1,
+        "message": "车辆不存在"
+      }
+    @apiErrorExample {json} Error-Response:
+      HTTP/1.1 200 OK
+      {
+        "status": 2,
+        "message": "不允许修改"
+      }
+    """
+    user_id = request.json.get('user_id')
+    car_id = request.json.get('car_id')
+    mode = request.json.get('mode')
+    amount = request.json.get('amount')
+    is_alter_mode = alter_charging_mode(car_id, mode)
+    if is_alter_mode == 0:
+        is_alter_amount = alter_charging_amount(car_id, amount)
+        if is_alter_amount == 0:
+            return jsonify({"status": 0, "message": "修改成功"})
+        elif is_alter_amount == 1:
+            return jsonify({"status": 1, "message": "车辆不存在"})
+        else:
+            return jsonify({"status": 2, "message": "不允许修改"})
+    elif is_alter_mode == 1:
+        return jsonify({"status": 4, "message": "车辆不存在"})
+    else:
+        return jsonify({"status": 5, "message": "不允许修改"})
 
 @app.route('/alter/cancel', methods=['POST'])
 def alter_cancel():

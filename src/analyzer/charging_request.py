@@ -65,7 +65,9 @@ def query_charging_detail(car_id: str) -> ChargingInfo:
     if car_id in request_dict:
         request = request_dict[car_id]
         pile = get_pile(request.pile_id)
-        info = pile.get_charging_info(car_id)
+        info = None
+        if pile is not None:
+            info = pile.get_charging_info(car_id)
         return {
             "car_id": car_id,
             "mode": request.mode.value,
