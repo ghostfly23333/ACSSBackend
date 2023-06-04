@@ -1,5 +1,8 @@
 from flask import Blueprint, request, jsonify
 
+from classes.ChargingRequest import ChargingMode
+from classes.Schduler import scheduler
+
 app = Blueprint('admin_controller', __name__)
 
 from classes.ChargingPile import charging_piles, PileState
@@ -108,7 +111,7 @@ def alter_pile():
         pile = charging_piles[pile_id]
         pile.status = PileState(status)
 
-        # TODO: reschedule
+        scheduler.shutdown_pile(ChargingMode(pile.pile_type.value), pile.pile_id)
 
         return jsonify({
             "status": 0,
