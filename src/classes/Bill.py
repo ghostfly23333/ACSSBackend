@@ -1,5 +1,7 @@
 from classes.Timer import timer, Time
 from classes.ChargingRequest import ChargingMode
+# from Timer import timer, Time
+# from ChargingRequest import ChargingMode
 
 # 划分时间段
 def slice_time(start_time,cur_time,period_Start,period_end,period_attr):
@@ -241,6 +243,9 @@ class BillContainer:
             
         return None
     
+    def find_user_bill(self,user_id,bill_id):
+        return self.container.get(user_id).get(bill_id)
+            
     def delete_bill(self,bill_id):
         for k,i in self.container.items():
             key = list(i.keys())[0]
@@ -290,9 +295,10 @@ class BillContainer:
                     
 # con = BillContainer()
 # a = Bill()
-# a.generate_request('jxf',1,'1',1)
+
 # # print(a)
 # t1=timer.time()
+# a.generate_request('jxf',1,'1',1,t1)
 # t2=Time(t1.stamp+12000)
 # print(t1)
 # print(t2)
@@ -301,4 +307,4 @@ class BillContainer:
 # t2=Time(t1.stamp+13000)
 # a.persist(t2,0,con)
 # print(a)
-# print(list(con['jxf'].items())[0][1])
+# print(con.find_user_bill('jxf','1'))
