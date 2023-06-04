@@ -33,10 +33,10 @@ def alter_charging_mode(car_id: str, mode: int) -> int:
         else:
             # 在充电区
             # 取消充电后重新进入等候区排队
-            user_id = request_dict[car_id].user_id
-            amount = request_dict[car_id].amount
-            submit_charging_request(user_id, car_id, mode, amount)
-            cancel_charging_request(car_id)
+            # user_id = request_dict[car_id].user_id
+            # amount = request_dict[car_id].amount
+            # cancel_charging_request(car_id)
+            # submit_charging_request(user_id, car_id, mode, amount)
             return 2
     else:
         return 1
@@ -52,10 +52,10 @@ def alter_charging_amount(car_id: str, amount: float) -> int:
         else:
             # 在充电区
             # 取消充电后重新进入等候区排队    
-            user_id = request_dict[car_id].user_id
-            mode = int(request_dict[car_id].mode)
-            submit_charging_request(user_id, car_id, mode, amount)
-            cancel_charging_request(car_id)
+            # user_id = request_dict[car_id].user_id
+            # mode = request_dict[car_id].mode.value
+            # cancel_charging_request(car_id)
+            # submit_charging_request(user_id, car_id, mode, amount)
             return 2
     else:
         return 1

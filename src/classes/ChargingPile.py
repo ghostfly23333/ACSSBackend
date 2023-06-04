@@ -147,13 +147,13 @@ class ChargingPile:
         if self.task_info is not None and self.task_info.car_id == car_id:
             self.lock.release()
             timer.cancel_task(self.task_id, run = True)
-        
-        for item in self.cars_queue:
-            if item.car_id == car_id:
-                self.cars_queue.remove(item)
-                item.end()
-                del_charging_request(car_id)
-                self.lock.release()
+        else:
+            for item in self.cars_queue:
+                if item.car_id == car_id:
+                    self.cars_queue.remove(item)
+                    item.end()
+                    del_charging_request(car_id)
+                    self.lock.release()
             
     
     def end_charging(self):
