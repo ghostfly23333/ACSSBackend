@@ -2,6 +2,8 @@ from enum import Enum
 from typing import Optional
 from classes.Timer import timer, Time
 from classes.ChargingRequest import get_charging_queue_num
+from classes.ChargingRequest import get_charging_queue_num, get_charging_mode
+from classes.Bill import compute_price
 import threading
 
 class PileState(Enum):
@@ -30,6 +32,7 @@ class ChargingInfo:
     start_time: Time
     status: int
     charge_speed: float
+    fee: float
 
     def __init__(self, car_id: str, all_amount: float):
         self.car_id = car_id
@@ -42,6 +45,7 @@ class ChargingInfo:
         self.start_time = None
         self.status = 0
         self.charge_speed = 0.0
+        self.fee = 0.0
     
     def __lt__(self, other):
         return self.queue_num < other.queue_num
@@ -67,6 +71,9 @@ class ChargingInfo:
             else:
                 self.charged_seconds = max_duration
                 self.charged_amount = max_amount
+            _, _, service_fee, charge_fee = compute_price(self.start_time, cur, get_charging_mode(self.car_id))
+            self.fee = service_fee + charge_fee 
+            
 
     def time_remain(self) -> float:
         if self.status == 0:
@@ -80,6 +87,10 @@ class ChargingInfo:
     def current(self):
         self.update()
         return self.to_dict()
+    
+    def current_result(self):
+        self.update()
+        return self.to_tuple_str()
 
     # to dict
     def to_dict(self) -> dict:
@@ -92,8 +103,12 @@ class ChargingInfo:
             "time_remain": self.time_remain(),
             "charged_amount": self.charged_amount,
             "charged_seconds": self.charged_seconds,
+            "fee": self.fee
         }
-
+    
+    def to_tuple_str(self) -> str: 
+        my_tuple = (self.car_id, round(self.charged_amount, 3), round(self.fee, 3))
+        return '(' + ', '.join(map(str, my_tuple)) + ')'
 
 pile_callbacks = []
 
@@ -210,8 +225,18 @@ class ChargingPile:
             l = list(self.cars_queue)
             res['waiting'] = [item.current() for item in l]
             return res
+    
+    def result(self):
+        res = {}
+        with self.lock:
+            if self.task_info is not None:
+                res['charging'] = self.task_info.current_result()
+            else:
+                res['charging'] = None
+            l = list(self.cars_queue)
+            res['waiting'] = [item.current_result for item in l]
+            return res
 
-        
     def clear_queue(self):
         with self.lock:
             l = list(self.cars_queue)
