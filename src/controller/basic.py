@@ -93,6 +93,7 @@ def get_time():
         "message": "获取成功",
         "data": {
           "stamp": 0.0,
+          "ratio": 1,
           "year": 0,
           "month": 0,
           "day": 0,
@@ -103,7 +104,9 @@ def get_time():
       }
     """
     t = timer.time()
-    return jsonify({"status": 0, "message": "获取成功", "data": t.to_dict()})
+    data = t.to_dict()
+    data['ratio'] = timer._ratio
+    return jsonify({"status": 0, "message": "获取成功", "data": data})
 
 @app.route('/test', methods=['POST'])
 def get_test():

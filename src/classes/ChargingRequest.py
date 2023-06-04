@@ -19,6 +19,8 @@ class ChargingRequest:
         self.car_id = car_id
         self.mode = mode
         self.amount = amount
+        self.pile_id = '',
+        self.queue_num = -1
 
     def set_mode(self, mode: ChargingMode):
         self.mode = mode
