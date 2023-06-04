@@ -1,11 +1,8 @@
 from enum import Enum
-from typing import Any, Callable, Optional
-from threading import Lock
+from typing import Optional
 from classes.Timer import timer, Time
 from classes.ChargingRequest import get_charging_queue_num
-import queue
 import threading
-lock = Lock()
 
 class PileState(Enum):
     Idle = 0
@@ -105,12 +102,11 @@ class ChargingPile:
     pile_type: PileType
     charge_speed: float
     status: PileState
+    cars_queue: list
 
-    cars_queue: queue.PriorityQueue()
-    
     task_info: ChargingInfo
     task_id: int
-    process_lock: threading.Lock
+    lock: threading.Lock
 
     def __init__(self, pile_id: str, pile_type: PileType):
         # metadata
@@ -121,39 +117,37 @@ class ChargingPile:
         # runtime data
         self.status = PileState.Idle
         self.task_info = None
-        self.cars_queue = queue.PriorityQueue()
+        self.cars_queue = list()
         self.task_id = -1
-        self.process_lock = threading.Lock()
+        self.lock = threading.Lock()
     
     def end_charging(self):
         print(f'{timer.time().to_string()} end charging: {self.task_info.car_id}')
-        self.process_lock.acquire()
+        self.lock.acquire()
         if self.task_info is not None:
             self.task_info.end()
             self.task_info = None
 
         if self.status != PileState.Error:
-            if self.cars_queue.qsize() == 0:
+            if len(self.cars_queue) == 0:
                 self.status = PileState.Idle
-                self.process_lock.release()
+                self.lock.release()
             else:
-                self.process_lock.release()
+                self.lock.release()
                 self.start_charging()
 
             for func in pile_callbacks:
                 func(self.pile_type)
     
     def start_charging(self):
-        with self.process_lock:
+        with self.lock:
             if self.status == PileState.Error:
                 return 
-            if self.cars_queue.qsize() > 0 and self.task_info is None:
-                try:
-                    self.task_info = self.cars_queue.get(False)
-                except queue.Empty:
-                    pass
+            if len(self.cars_queue) > 0 and self.task_info is None:
+                self.task_info = self.cars_queue.pop(0)
                 if self.task_info is None:
                     return
+                
                 print(f'start charging: {self.task_info.car_id} {self.task_info.all_amount}')
                 self.status = PileState.Working
                 interval = self.task_info.all_amount / self.charge_speed
@@ -162,9 +156,11 @@ class ChargingPile:
                 self.task_id = timer.create_task(interval, self.end_charging, args=None)
 
     def queue_car(self, car_id: str, amount: float, forced: bool = False):
-        if not forced and self.cars_queue.qsize() >= 1:
+        if not forced and len(self.cars_queue) >= 1:
             return False
-        self.cars_queue.put(ChargingInfo(car_id, amount))
+        with self.lock:
+            self.cars_queue.append(ChargingInfo(car_id, amount))
+
         if self.status == PileState.Idle:
             self.start_charging()
         return True
@@ -175,64 +171,64 @@ class ChargingPile:
         if self.task_info is not None:
             times += self.task_info.time_remain()
 
-        for info in self.cars_queue.queue:
+        for info in self.cars_queue:
             times += info.time_remain()
 
         return times
 
 
     def shutdown(self):
-        with self.process_lock:
+        with self.lock:
             self.status = PileState.Error
             if self.task_id != -1:
                 timer.cancel_task(self.task_id)
                 self.task_id = -1
-            l = list(self.cars_queue.queue)
+            l = list(self.cars_queue)
             if self.task_info is not None:
                 l.append(self.task_info)
             self.task_info = None
-            self.cars_queue = queue.PriorityQueue()
+            self.cars_queue = list()
             return l
     
 
     def get_charging_info(self, car_id: str) -> Optional[ChargingInfo]:
-        with self.process_lock:
+        with self.lock:
             if self.task_info is not None and self.task_info.car_id == car_id:
                 return self.task_info.current()
-            for item in self.cars_queue.queue:
+            for item in self.cars_queue:
                 if item.car_id == car_id:
                     return item.current()
             return None
     
     def detail(self):
         res = {}
-        with self.process_lock:
+        with self.lock:
             if self.task_info is not None:
                 res['charging'] = self.task_info.current()
             else:
                 res['charging'] = None
-            l = list(self.cars_queue.queue)
+            l = list(self.cars_queue)
             res['waiting'] = [item.current() for item in l]
             return res
 
         
     def clear_queue(self):
-        with self.process_lock:
-            l = list(self.cars_queue.queue)
-            self.cars_queue = queue.PriorityQueue()
+        with self.lock:
+            l = list(self.cars_queue)
+            self.cars_queue = list()
             return l
 
     def restart(self):
         if self.status != PileState.Error:
             return
         
-        self.cars_queue = queue.PriorityQueue()
+        self.cars_queue = list()
         self.task_id = -1
         self.status = PileState.Idle
 
     def is_vacant(self) -> bool:
-        with lock:
-            return self.status != PileState.Error and self.cars_queue.qsize() == 0
+        with self.lock:
+            return self.status != PileState.Error and len(self.cars_queue) == 0
 
 charging_piles = {
     "F1": ChargingPile("F1", PileType.Fast),
