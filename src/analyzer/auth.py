@@ -1,7 +1,6 @@
 from analyzer import users
 from classes.UserInfo import UserInfo
-from .__init__ import container
-
+from analyzer.__init__ import container
 
 def register(username, password):
     if username in users:
