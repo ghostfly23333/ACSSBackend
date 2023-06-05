@@ -11,7 +11,7 @@ class ScheduleMode(Enum):
     GLOBAL = 1
     GLOBAL_IGNORE_MODE = 2
 
-schedule_mode = ScheduleMode.GLOBAL_IGNORE_MODE
+schedule_mode = ScheduleMode.NORMAL
 
 calling_lock = threading.Lock()
 queue_lock = threading.Lock()
@@ -205,7 +205,7 @@ class FIFOScheduler(Scheduler):
         else:
             request.set_pile_id(minimum_index)
             print(f'{timer.time().to_string()} new car: {car_id}')
-            if charging_piles[minimum_index].queue_car(car_id, request.amount):
+            if charging_piles[minimum_index].queue_car(ChargingInfo(car_id, request.amount)):
                 waiting_area.exit(car_id)
                 return True, minimum_index
             else:
@@ -233,8 +233,7 @@ class FIFOScheduler(Scheduler):
         waiting_area.stop_calling()
         to_schedule_list = charging_piles[pile_id].shutdown()
         for info in to_schedule_list:
-            new_info = info.relay()
-            info_list.append((get_charging_request(info.car_id).queue_num, new_info))
+            info_list.append((get_charging_queue_num(info.car_id), info))
         
         for pile_index in self.piles[charge_mode.value]:
             pile = get_pile(pile_index)
@@ -242,19 +241,21 @@ class FIFOScheduler(Scheduler):
                 continue
             pile_queue = pile.clear_queue()
             for q in pile_queue:
-                info_list.append((get_charging_request(q.car_id).queue_num, q))
+                info_list.append((get_charging_queue_num(q.car_id), q))
 
         info_list.sort(key=lambda x: x[0][1:])
 
         for info in info_list:
-            inserted = self.add_query(info[1].car_id)
+            
             request = get_charging_request(info[1].car_id)
+            if request is None:
+                continue
+            request.amount = request.amount - info[1].charged_amount
+            inserted = self.add_query(info[1].car_id)
             if not inserted[0]:
-                request.set_pile_id(0)
+                request.set_pile_id('')
                 waiting_area.enter(info[1].car_id)
                 break
-            else:
-                request.set_pile_id(info[1].car_id)
         waiting_area.start_calling()
 
 

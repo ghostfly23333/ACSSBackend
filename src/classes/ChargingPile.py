@@ -53,62 +53,43 @@ class ChargingInfo:
         self.status = 0
         self.charge_speed = 0.0
         self.fee = 0.0
-        #
-        self.base_amount = 0.0
-        self.base_seconds = 0.0
-        self.base_start_time = None
-        self.base_fee = 0.0
     
     def __lt__(self, other):
         return self.queue_num < other.queue_num
-    
-    def relay(self):
-        info = ChargingInfo(self.car_id, self.all_amount)
-        info.base_start_time = self.base_start_time
-        info.base_seconds = self.base_seconds
-        info.base_amount = self.base_amount
-        info.base_fee = self.base_fee
-        return info
 
     def start(self, charge_speed: float):
-        if self.base_start_time is None:
-            self.base_start_time = timer.time()
         self.start_time = timer.time()
         self.charge_speed = charge_speed
         self.status = 1
 
     def end(self):
         self.update()
-        if self.all_amount == self.charged_amount:
+        if self.all_amount <= self.charged_amount:
             self.status = 2
         else:
-            self.status = -1
+            self.status = 0
 
     def update(self):
         if self.status == 1:
             cur = timer.time()
             max_duration = cur - self.start_time
-            max_amount = max_duration * self.charge_speed + self.base_amount
+            max_amount = max_duration * self.charge_speed
             if max_amount  > self.all_amount:
                 self.status = 2
                 self.charged_amount = self.all_amount
                 self.charged_seconds = self.all_amount / self.charge_speed
             else:
-                self.charged_seconds = max_duration + self.base_seconds
+                self.charged_seconds = max_duration
                 self.charged_amount = max_amount
             _, _, service_fee, charge_fee = compute_price(self.start_time, cur, get_charging_mode(self.car_id))
-            self.fee = service_fee + charge_fee + self.base_fee
-        elif self.status == 0:
-            self.charged_amount = self.base_amount
-            self.charged_seconds = self.base_seconds
-            
+            self.fee = service_fee + charge_fee
+
 
     def time_remain(self) -> float:
         if self.status == 0:
             return -1
         elif self.status == 2:
             return 0.0
-
         cur = timer.time()
         return self.all_amount / self.charge_speed - (cur - self.start_time)
     
@@ -128,11 +109,11 @@ class ChargingInfo:
             "status": self.status,
             "all_amount": self.all_amount,
             "queue_num": self.queue_num,
-            "start_time": self.base_start_time.to_string() if self.base_start_time is not None else "",
+            "start_time": self.start_time.to_string() if self.start_time is not None else "",
             "time_remain": self.time_remain(),
             "charged_amount": self.charged_amount,
             "charged_seconds": self.charged_seconds,
-            "fee": self.fee
+            "fee": self.fee,
         }
     
     def to_tuple_str(self) -> str: 
@@ -228,11 +209,11 @@ class ChargingPile:
                     self.lock.release()
             
 
-    def queue_car(self, car_id: str, amount: float, forced: bool = False):
+    def queue_car(self, info:ChargingInfo, forced: bool = False):
         if not forced and len(self.cars_queue) >= 1:
             return False
         with self.lock:
-            self.cars_queue.append(ChargingInfo(car_id, amount))
+            self.cars_queue.append(info)
 
         if self.status == PileState.Idle:
             self.start_charging()
