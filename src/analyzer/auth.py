@@ -1,6 +1,6 @@
 from analyzer import users
 from classes.UserInfo import UserInfo
-
+from analyzer.__init__ import container
 
 def register(username, password):
     if username in users:
@@ -8,6 +8,7 @@ def register(username, password):
 
     new_user = UserInfo(username, password, 0)
     users[username] = new_user
+    container.add_user(username)
     return True
 
 
