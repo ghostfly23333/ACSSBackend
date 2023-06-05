@@ -126,13 +126,13 @@ class WaitingArea:
 
 # 尝试叫号
 try_lock = threading.Lock()
-def try_request(mode:ChargingMode):
+def try_request(mode:ChargingMode,input_num = 1):
     if mode is None:
         return
     # reset mode
     mode = ChargingMode.Ignore if schedule_mode == ScheduleMode.GLOBAL_IGNORE_MODE else mode
     # reset num
-    num = 1 if schedule_mode == ScheduleMode.NORMAL else vacant_num(mode)
+    num = input_num if schedule_mode == ScheduleMode.NORMAL else vacant_num(mode)
     print(f'vacant num: {num}')
     if waiting_area.calling_availale():
         with try_lock:
@@ -142,7 +142,7 @@ def try_request(mode:ChargingMode):
 
 
 def pile_available_callback(mode: ChargingMode):
-    try_request(mode)
+    try_request(mode,2)
 
 pile_callbacks.append(pile_available_callback)
       
