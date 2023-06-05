@@ -8,10 +8,10 @@ from classes.Timer import timer, Time
 
 class ScheduleMode(Enum):
     NORMAL = 0
-    GLOBAL = 1
+    GLOBAL_LIMITED = 1
     GLOBAL_IGNORE_MODE = 2
 
-schedule_mode = ScheduleMode.NORMAL
+schedule_mode = ScheduleMode.GLOBAL_LIMITED
 
 calling_lock = threading.Lock()
 queue_lock = threading.Lock()
@@ -126,19 +126,26 @@ class WaitingArea:
 
 # 尝试叫号
 try_lock = threading.Lock()
-def try_request(mode:ChargingMode,input_num = 1):
-    if mode is None:
-        return
+def try_request(mode:ChargingMode,num = 1):
     # reset mode
-    mode = ChargingMode.Ignore if schedule_mode == ScheduleMode.GLOBAL_IGNORE_MODE else mode
+    if schedule_mode == ScheduleMode.GLOBAL_IGNORE_MODE:
+        mode = ChargingMode.Ignore
+
     # reset num
-    num = input_num if schedule_mode == ScheduleMode.NORMAL else vacant_num(mode)
-    print(f'vacant num: {num}')
+    if schedule_mode != ScheduleMode.NORMAL:
+        num = vacant_num(mode)
+
+    # assert vacant num
+    if schedule_mode == ScheduleMode.GLOBAL_LIMITED:
+        if (mode == ChargingMode.Fast and num < 2) or (mode == ChargingMode.Normal and num < 3):
+            return
+
     if waiting_area.calling_availale():
         with try_lock:
             firsts = waiting_area.get_first(mode,num)
             if len(firsts) > 0:
                 scheduler.add_querys(firsts)
+
 
 
 def pile_available_callback(mode: ChargingMode):

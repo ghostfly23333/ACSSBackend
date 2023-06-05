@@ -3,7 +3,7 @@ import re
 import json
 import time as time_
 from datetime import date
-
+import threading
 import requests
 
 
@@ -41,7 +41,7 @@ event_list = []
 current_date = date.today()
 date_string = current_date.strftime("%Y-%m-%d")
 # 打开 CSV 文件
-with open('2.csv', 'r') as file:
+with open('4a.csv', 'r') as file:
     # 创建 CSV 读取器
     reader = csv.reader(file)
 
@@ -76,6 +76,17 @@ headers = {
 }
 time_payload = json.dumps({
     })
+
+
+def print_result():
+    test_url = 'http://127.0.0.1:10443/result'
+    test_payload = json.dumps({
+        })
+        
+    response = requests.request("POST", test_url, headers=headers, data=test_payload)
+    print(response.text.encode('utf8').decode('unicode_escape'), file=file)
+
+
 while(1):
     if len(event_list) == 0:
         break
@@ -86,7 +97,7 @@ while(1):
     url = ""
     payload = json.dumps({})
     event_time = event_list[0][0]
-    if event_time < now_stamp:
+    if event_time - now_stamp < 5:
         # 事件已经发生
         for item in event_list[0][1]:
             if item[0] == 'A':
@@ -158,9 +169,8 @@ while(1):
             print(url, payload, file=file)
         file.flush()
         event_list.pop(0)
-        test_url = 'http://127.0.0.1:10443/test'
-        test_payload = json.dumps({
-            })
-        response = requests.request("POST", test_url, headers=headers, data=test_payload)
-        print(response.text.encode('utf8').decode('unicode_escape'), file=file)
+        threading.Timer(1,print_result).start()
+        
     time_.sleep(0.2)
+
+

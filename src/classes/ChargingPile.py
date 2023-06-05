@@ -325,11 +325,15 @@ class ChargingPile:
             return self.status != PileState.Error and len(self.cars_queue) == 0
     
     def get_maximum_available(self) -> int:
-        result = 0
-        if self.task_info is None:
-            result += 1
-        result += 1 - len(self.cars_queue)
-        return result if result > 0 else 0
+        with self.lock:
+            result = 0
+            if self.task_info is None:
+                result += 1
+            result += 1 - len(self.cars_queue)
+            
+            t = timer.time()    
+            print(f'{t.hour}:{t.minute} vacant: {self.pile_id} - {result}')
+            return result if result > 0 else 0
 
 charging_piles = {
     "F1": ChargingPile("F1", PileType.Fast),

@@ -151,6 +151,6 @@ def get_result():
     res['waiting_area'] = waiting_area.result()
     for key in charging_piles:
         res[key] = charging_piles[key].result()  
-    print(res)
+    # print(res)
     return jsonify({"status": 0, "message": res})
 

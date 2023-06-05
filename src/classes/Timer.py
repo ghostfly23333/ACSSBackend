@@ -122,7 +122,7 @@ class Timer:
                     func(*args)
             
 
-timer = Timer(SYSTEM_TIME_RATIO,Time.make("2023-06-04 05:55:00"))
+timer = Timer(SYSTEM_TIME_RATIO,Time.make("2023-06-05 05:55:00"))
 
 # example
 # if __name__ == "__main__":
