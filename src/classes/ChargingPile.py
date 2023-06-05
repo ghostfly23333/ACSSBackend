@@ -133,6 +133,7 @@ class ChargingPile:
     task_id: int
     start_time: Time
     lock: threading.Lock
+    run_time: float
 
     def __init__(self, pile_id: str, pile_type: PileType):
         # metadata
@@ -145,6 +146,7 @@ class ChargingPile:
         self.task_info = None
         self.total_amount = 0.0
         self.start_time = timer.time()
+        self.run_time = 0.0
         self.cars_queue = list()
         self.task_id = -1
         self.lock = threading.Lock()
@@ -243,6 +245,7 @@ class ChargingPile:
     def shutdown(self):
         with self.lock:
             self.status = PileState.Error
+            self.run_time = timer.time() - self.start_time
             self.start_time = None
 
             l = list(self.cars_queue)
@@ -267,6 +270,12 @@ class ChargingPile:
         with self.lock:
             l = list(self.cars_queue)
             return [item.current() for item in l]
+        
+    def get_run_time(self) -> float:
+        if self.status == PileState.Error:
+            return self.run_time
+        else:
+            return self.run_time + timer.time() - self.start_time if self.start_time is not None else 0
     
     def detail(self):
         res = {}
@@ -280,7 +289,7 @@ class ChargingPile:
 
             res['status'] = self.status.value
             res['amount'] = self.total_amount + (self.task_info.charged_amount if self.task_info is not None else 0) + sum([item.charged_amount for item in l])
-            res['time'] = timer.time() - self.start_time if self.pile_type != PileState.Error and self.start_time is not None else 0
+            res['time'] = self.get_run_time()
             return res
     
     def result(self):
