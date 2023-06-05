@@ -255,7 +255,12 @@ class BillContainer:
                 bill['bill_id']:bill
             }
             self.container[bill['user_id']].update(tmp)
-        
+    
+    def all_bills(self):
+        res = []
+        for i in self.container.values():
+            res.extend(i.values())
+        return res
     
     def find_user(self,user_id):
         return self.container.get(user_id)

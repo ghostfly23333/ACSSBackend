@@ -275,7 +275,7 @@ class ChargingPile:
         if self.status == PileState.Error:
             return self.run_time
         else:
-            return self.run_time + timer.time() - self.start_time if self.start_time is not None else 0
+            return self.run_time + ((timer.time() - self.start_time) if self.start_time is not None else 0)
     
     def detail(self):
         res = {}

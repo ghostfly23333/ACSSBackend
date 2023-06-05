@@ -3,6 +3,7 @@ from analyzer.charging_request import query_waiting_list
 from classes.ChargingRequest import ChargingMode
 from classes.Schduler import scheduler
 from classes.ChargingPile import charging_piles
+from classes.Timer import Time
 
 app = Blueprint('admin_controller', __name__)
 
@@ -242,20 +243,38 @@ def query_report():
     start = request.args.get('start')
     end = request.args.get('end')
     duration,amount,service,charge,total=0,0,0,0,0
-    for bill in container.values():
-        content=bill.content
-        if content['start_time']>=start and content['end_time']<=end:
+    try:
+      start = Time.make(start).stamp if start != "" else 0.0
+      end = Time.make(end).stamp if end != "" else 0.0
+    except:
+      return jsonify({
+        "status": 1,
+        "message": "日期格式错误",
+      })
+    
+    min_start = 0.0
+    max_end = 0.0
+    for content in container.all_bills():
+        if (start == 0.0 or content['start_time'] >= start) and (end == 0.0 or content['end_time'] <= end):
+            if min_start == 0.0 or content['start_time'] < min_start:
+                min_start = content['start_time']
+            if max_end == 0.0 or content['end_time'] > max_end:
+                max_end = content['end_time']
             duration+=content['duration']
             amount+=content['amount']
             service+=content['service_cost']
             charge+=content['charge']
             total+=content['total']
+
+    start = start if start != 0.0 else min_start
+    end = end if end != 0.0 else max_end
+      
     return jsonify({
         "status": 0,
         "message": "查询成功",
         "data": {
-          "start": start,
-          "end": end,
+          "start": Time(start).to_string() if start != 0.0 else "",
+          "end": Time(end).to_string() if end != 0.0 else "",
           "duration": duration,
           "amount": amount,
           "service": service,
