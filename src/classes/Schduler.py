@@ -1,10 +1,10 @@
 # WARNING: NOT TESTED YET
 
-from classes.ChargingPile import charging_piles, PileType, PileState, ChargingInfo, PileType, charging_piles, pile_callbacks, get_pile
-from classes.ChargingRequest import get_charging_request, ChargingMode, get_charging_mode, get_charging_queue_num
+from classes.ChargingPile import charging_piles, PileType, ChargingInfo, PileType, charging_piles, pile_callbacks, get_pile
+from classes.ChargingRequest import get_charging_request, ChargingMode, get_charging_mode, get_charging_queue_num, get_charging_amount
 import threading
 from enum import Enum
-from classes.Timer import timer, Time
+from classes.Timer import timer
 
 class ScheduleMode(Enum):
     NORMAL = 0
@@ -65,10 +65,9 @@ class WaitingArea:
 
     # 指定车辆退出等候区
     def exit(self, car_id: str):
-        mode = get_charging_mode(car_id)
         with queue_lock:
-            try:
-                if mode == ChargingMode.Normal:
+            try:      
+                if car_id in self.t_charging_queue:
                     self.t_charging_queue.remove(car_id)
                 else:
                     self.f_charging_queue.remove(car_id)
@@ -118,15 +117,22 @@ class WaitingArea:
             if mode == ChargingMode.Ignore or mode == ChargingMode.Normal:
                 for x in self.t_charging_queue:
                     requests.append(x)
-            if mode == ChargingMode.Ignore and len(requests) < num:
-                return []
-            
+            if mode == ChargingMode.Ignore:
+                if len(requests) < num:
+                    return []
+                else:
+                    # 策略b
+                    requests = sorted(requests, key=lambda x: get_charging_amount(x), reverse=True)
+                    return requests
+                       
             requests = sorted(requests, key=lambda x: get_charging_queue_num(x))
             return requests[:num] if len(requests) > num else requests
 
 # 尝试叫号
 try_lock = threading.Lock()
 def try_request(mode:ChargingMode,num = 1):
+    if mode is None:
+        return
     # reset mode
     if schedule_mode == ScheduleMode.GLOBAL_IGNORE_MODE:
         mode = ChargingMode.Ignore
@@ -142,9 +148,18 @@ def try_request(mode:ChargingMode,num = 1):
 
     if waiting_area.calling_availale():
         with try_lock:
-            firsts = waiting_area.get_first(mode,num)
+            firsts = waiting_area.get_first(mode, num)
             if len(firsts) > 0:
-                scheduler.add_querys(firsts)
+                if schedule_mode == ScheduleMode.GLOBAL_IGNORE_MODE:
+                    # 策略b
+                    ## 快充调度
+                    t_querys = sorted(firsts[:2*2], key=lambda x: get_charging_amount(x))
+                    scheduler.add_querys(t_querys)
+                    ## 慢充调度
+                    f_querys = sorted(firsts[2*2:], key=lambda x: get_charging_amount(x))                                       
+                    scheduler.add_querys(f_querys)
+                else:
+                    scheduler.add_querys(firsts)
 
 
 
@@ -195,9 +210,9 @@ class FIFOScheduler(Scheduler):
         request = get_charging_request(car_id)
         if request is None:
             return False, -1
-        
+    
         charge_mode = request.mode
-
+               
         for pile_index in self.piles[charge_mode.value]:
             pile = get_pile(pile_index)
             if pile.is_vacant():             
@@ -228,7 +243,6 @@ class FIFOScheduler(Scheduler):
 
     def add_querys(self, car_ids) -> list:
         requests = list(get_charging_request(x) for x in car_ids)
-        requests.sort(key=lambda x: x.amount)
         results = list()
         for request in requests:
             results.append((request.car_id, self.add_query(request.car_id)))
@@ -236,7 +250,6 @@ class FIFOScheduler(Scheduler):
 
     def shutdown_pile(self, charge_mode, pile_id):
         info_list = list()
-        # TODO : wirte generate bill in end_charing() at ChargingPile.py
         waiting_area.stop_calling()
         to_schedule_list = charging_piles[pile_id].shutdown()
         for info in to_schedule_list:
