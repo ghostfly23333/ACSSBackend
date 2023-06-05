@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask import request
 from flask import jsonify
 from analyzer.charging_request import alter_charging_mode, alter_charging_amount, cancel_charging_request
-from analyzer.charging_request import submit_charging_request, query_charging_detail, query_charging_request
+from analyzer.charging_request import submit_charging_request, query_charging_detail, query_charging_request, query_brief_info
 from analyzer.__init__ import container
 
 
@@ -84,6 +84,7 @@ def query_detail():
     @apiSuccess {Int} mode 充电模式(0:常规, 1:快速)
     @apiSuccess {Int} status 车辆状态 (0:等待中, 1:充电中)
     @apiSuccess {String} pile_id 充电桩id
+    @apiSuccess {Int} queueing 等候数量
     @apiSuccess {Double} request_amount 电量
     @apiSuccess {Double} charged_amount 已充电量
     @apiSuccess {Double} duration 时间
@@ -99,6 +100,7 @@ def query_detail():
           "mode": 0,
           "status": 0,
           "pile_id": "",
+          "queueing:0,
           "request_amount": 0,
           "charged_amount": 0,
           "duration": 0,
@@ -237,10 +239,6 @@ def query_bill():
     """
     user_id = request.args.get('user_id')
     bill_id = request.args.get('bill_id')
-    # if cur_bill['bill_id'] !=bill_id :
-    #     return jsonify(cur_bill.content)
-    # else:
-    # 暂时不太清楚该怎么确认是实时还是静态，暂定都是查静态报表
     bill = container.find_user_bill(user_id,bill_id)
     if bill is None:
         return jsonify({"status":1,"message":"账单不存在"})
@@ -261,7 +259,6 @@ def query_queuing():
     @apiSuccess {String} pile_id 充电桩id
     @apiSuccess {Int} wait 排队位置 
     @apiSuccess {Int} section 区域(0:等待区, 1:充电区)
-    @apiSuccess {Int} status 状态(0:等待中, 1:充电中)
     @apiSuccessExample {json} Success-Response:
       HTTP/1.1 200 OK
       {
@@ -272,7 +269,6 @@ def query_queuing():
           "pile_id": "",
           "wait": 0,
           "section": 0,
-          "status": 0
         }
       }
     @apiErrorExample {json} Error-Response:
@@ -282,7 +278,13 @@ def query_queuing():
         "message": "车辆不存在"
       }
     """
-    return 'user/query/queue'
+    user_id = request.args.get('user_id')
+    car_id = request.args.get('car_id')
+    res = query_brief_info(car_id)
+    if res is None:
+        return jsonify({"status":1,"message":"车辆不存在"})
+    else:
+        return jsonify({"status":0,"message":"查询成功","data":res})
 
 
 

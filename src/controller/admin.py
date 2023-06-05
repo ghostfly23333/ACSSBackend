@@ -72,7 +72,7 @@ def alter_pile():
     @apiName AlterPile
     @apiGroup Admin
     @apiParam {String} pile_id 充电桩id
-    @apiParam {Int} status 充电桩状态 (0:关闭, 1:开启, 2:故障)
+    @apiParam {Int} status 充电桩状态 (0:关闭, 1:开启)
     @apiSuccessExample {json} Success-Response:
       HTTP/1.1 200 OK
       {
@@ -89,7 +89,7 @@ def alter_pile():
     pile_id = request.json.get('pile_id')
     status = request.json.get('status')
     if pile_id is None or not isinstance(pile_id, str) \
-            or status is None or status not in [0, 1, 2]:
+            or status is None or status not in [0, 1]:
         return jsonify({
             "status": 1,
             "message": "参数错误",
@@ -97,10 +97,15 @@ def alter_pile():
     
     if pile_id in charging_piles:
         pile = charging_piles[pile_id]
-        pile.status = PileState(status)
-
-        scheduler.shutdown_pile(ChargingMode(pile.pile_type.value), pile.pile_id)
-
+        if pile.status != PileState.Error and status == 0:
+            scheduler.shutdown_pile(ChargingMode(pile.pile_type.value), pile.pile_id)
+        elif pile.status == PileState.Error and status == 1:
+            pile.restart()
+        else:
+            return jsonify({
+                "status": 1,
+                "message": "重复的操作",
+            })
         return jsonify({
             "status": 0,
             "message": "修改成功",

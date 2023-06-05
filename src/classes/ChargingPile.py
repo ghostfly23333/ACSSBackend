@@ -36,6 +36,11 @@ class ChargingInfo:
     charge_speed: float
     fee: float
 
+    base_amount: float
+    base_seconds: float
+    base_fee: float
+    base_start_time: Time
+
     def __init__(self, car_id: str, all_amount: float):
         self.car_id = car_id
         self.all_amount = all_amount
@@ -48,33 +53,54 @@ class ChargingInfo:
         self.status = 0
         self.charge_speed = 0.0
         self.fee = 0.0
+        #
+        self.base_amount = 0.0
+        self.base_seconds = 0.0
+        self.base_start_time = None
+        self.base_fee = 0.0
     
     def __lt__(self, other):
         return self.queue_num < other.queue_num
+    
+    def relay(self):
+        info = ChargingInfo(self.car_id, self.all_amount)
+        info.base_start_time = self.base_start_time
+        info.base_seconds = self.base_seconds
+        info.base_amount = self.base_amount
+        info.base_fee = self.base_fee
+        return info
 
     def start(self, charge_speed: float):
+        if self.base_start_time is None:
+            self.base_start_time = timer.time()
         self.start_time = timer.time()
         self.charge_speed = charge_speed
         self.status = 1
 
     def end(self):
         self.update()
-        self.status = 2
+        if self.all_amount == self.charged_amount:
+            self.status = 2
+        else:
+            self.status = -1
 
     def update(self):
         if self.status == 1:
             cur = timer.time()
             max_duration = cur - self.start_time
-            max_amount = max_duration * self.charge_speed
-            if max_amount > self.all_amount:
+            max_amount = max_duration * self.charge_speed + self.base_amount
+            if max_amount  > self.all_amount:
                 self.status = 2
                 self.charged_amount = self.all_amount
                 self.charged_seconds = self.all_amount / self.charge_speed
             else:
-                self.charged_seconds = max_duration
+                self.charged_seconds = max_duration + self.base_seconds
                 self.charged_amount = max_amount
             _, _, service_fee, charge_fee = compute_price(self.start_time, cur, get_charging_mode(self.car_id))
-            self.fee = service_fee + charge_fee 
+            self.fee = service_fee + charge_fee + self.base_fee
+        elif self.status == 0:
+            self.charged_amount = self.base_amount
+            self.charged_seconds = self.base_seconds
             
 
     def time_remain(self) -> float:
@@ -102,7 +128,7 @@ class ChargingInfo:
             "status": self.status,
             "all_amount": self.all_amount,
             "queue_num": self.queue_num,
-            "start_time": self.start_time.to_string() if self.start_time is not None else "",
+            "start_time": self.base_start_time.to_string() if self.base_start_time is not None else "",
             "time_remain": self.time_remain(),
             "charged_amount": self.charged_amount,
             "charged_seconds": self.charged_seconds,
@@ -141,20 +167,6 @@ class ChargingPile:
         self.cars_queue = list()
         self.task_id = -1
         self.lock = threading.Lock()
-
-    def cancel_charging(self, car_id: str):
-        self.lock.acquire()
-        if self.task_info is not None and self.task_info.car_id == car_id:
-            self.lock.release()
-            timer.cancel_task(self.task_id, run = True)
-        else:
-            for item in self.cars_queue:
-                if item.car_id == car_id:
-                    self.cars_queue.remove(item)
-                    item.end()
-                    del_charging_request(car_id)
-                    self.lock.release()
-            
     
     def end_charging(self):
         end_time = timer.time()
@@ -167,11 +179,11 @@ class ChargingPile:
             bill=Bill()
             bill.generate_request(request.user_id,self.pile_id,self.task_info.car_id,request.mode.value,self.task_info.charged_amount,self.task_info.start_time)
             bill.persist(end_time,Bill_status.Submitted,container)
-            del_charging_request(self.task_info.car_id)
+            if self.task_info.status == 2:
+                del_charging_request(self.task_info.car_id)
             self.task_info = None
             self.task_id = -1
             
-
         if self.status != PileState.Error:
             if len(self.cars_queue) == 0:
                 self.status = PileState.Idle
@@ -181,7 +193,9 @@ class ChargingPile:
                 self.start_charging()
 
             for func in pile_callbacks:
-                func(ChargingMode.Fast if self.pile_type == PileType.Fast else ChargingMode.Normal)
+                func(ChargingMode(self.pile_type.value))
+        else:
+            self.lock.release()
     
     def start_charging(self):
         with self.lock:
@@ -198,6 +212,21 @@ class ChargingPile:
                 print(f'charge_speed: {self.charge_speed} interval:{interval}')
                 self.task_info.start(self.charge_speed)
                 self.task_id = timer.create_task(interval, self.end_charging, args=None)
+
+    def cancel_charging(self, car_id: str):
+        self.lock.acquire()
+        if self.task_info is not None and self.task_info.car_id == car_id:
+            self.lock.release()
+            timer.cancel_task(self.task_id, run = True)
+            del_charging_request(car_id)
+        else:
+            for item in self.cars_queue:
+                if item.car_id == car_id:
+                    self.cars_queue.remove(item)
+                    item.end()
+                    del_charging_request(car_id)
+                    self.lock.release()
+            
 
     def queue_car(self, car_id: str, amount: float, forced: bool = False):
         if not forced and len(self.cars_queue) >= 1:
@@ -219,21 +248,29 @@ class ChargingPile:
             times += info.time_remain()
 
         return times
+    
+    def get_position(self, car_id: str) -> int:
+        with self.lock:
+            if self.task_info is not None and self.task_info.car_id == car_id:
+                return 0
+            for i in range(len(self.cars_queue)):
+                if self.cars_queue[i].car_id == car_id:
+                    return i + 1
+            return -1
 
 
     def shutdown(self):
         with self.lock:
             self.status = PileState.Error
             self.start_time = None
-            if self.task_id != -1:
-                timer.cancel_task(self.task_id)
-                self.task_id = -1
+
             l = list(self.cars_queue)
+            self.cars_queue = list()
+
             if self.task_info is not None:
                 l.append(self.task_info)
-            self.task_info = None
-            self.cars_queue = list()
-            return l
+        timer.cancel_task(self.task_id, run=True)
+        return l
     
 
     def get_charging_info(self, car_id: str) -> Optional[ChargingInfo]:
@@ -290,6 +327,8 @@ class ChargingPile:
         self.cars_queue = list()
         self.task_id = -1
         self.status = PileState.Idle
+        for func in pile_callbacks:
+            func(ChargingMode(self.pile_type.value))
 
     def is_vacant(self) -> bool:
         with self.lock:

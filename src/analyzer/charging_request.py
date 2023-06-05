@@ -100,23 +100,53 @@ def query_waiting_list() -> list:
         })
     return l
 
+
+def query_queuing_position(car_id: str) -> int:
+    queuing = -1
+    if waiting_area.is_waiting(car_id):
+        queuing = waiting_area.get_queue_position(car_id)
+        if queuing != -1:
+            queuing += 2
+    else:
+        pile_id = request_dict[car_id].pile_id
+        pile = get_pile(pile_id)
+        if pile is not None:
+            queuing = pile.get_position(car_id)
+    return queuing
+
+
+def query_brief_info(car_id: str) -> dict:
+    if car_id not in request_dict:
+        return None
+    res = {}
+    res['car_id'] = car_id
+    res['wait'] = query_queuing_position(car_id)
+    res['pile_id'] = request_dict[car_id].pile_id
+    res['section'] = 0 if waiting_area.is_waiting(car_id) else 1
+    return res
+
+
 ## 查询详单
 def query_charging_detail(car_id: str) -> ChargingInfo:
     if car_id in request_dict:
         request = request_dict[car_id]
+
+        info = None
+        queuing = query_queuing_position(car_id)
         pile_id = request.pile_id
         pile = get_pile(pile_id)
-        
-        info = None
         if pile is not None:
             info = pile.get_charging_info(car_id)
+            queuing = pile.get_position(car_id)
         else:
-            pile_id = ""
+            pile_id = ''
+
         return {
             "car_id": car_id,
             "mode": request.mode.value,
             "status": info['status'] if info is not None else -1,
             "pile_id": pile_id,
+            "queuing": queuing,
             "request_amount": request.amount,
             "charged_amount": info['charged_amount'] if info is not None else 0,
             "duration": info['charged_seconds'] if info is not None else 0,

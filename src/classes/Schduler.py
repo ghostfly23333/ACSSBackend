@@ -41,7 +41,7 @@ class WaitingArea:
         
     def result(self) -> str:
         waiting_cars = self.f_charging_queue + self.t_charging_queue
-        sorted(waiting_cars, key=lambda x: get_charging_request(x).queue_num)
+        waiting_cars = sorted(waiting_cars, key=lambda x: get_charging_request(x).queue_num)
         result = ""
         for car_id in waiting_cars:
             request = get_charging_request(car_id)
@@ -85,6 +85,27 @@ class WaitingArea:
                 return True
             return False
     
+    def get_queue_position(self, car_id: str) -> int:
+        with queue_lock:
+            cur_list = []
+            if schedule_mode == ScheduleMode.NORMAL:
+                if get_charging_mode(car_id) == ChargingMode.Normal:
+                    cur_list = self.t_charging_queue
+                else:
+                    cur_list = self.f_charging_queue
+            else:
+                cur_list = self.f_charging_queue + self.t_charging_queue
+            
+            cur_list = sorted(cur_list, key=lambda x: get_charging_queue_num(x))
+            pos = 0
+            
+            try:
+                pos = cur_list.index(car_id)
+            except ValueError:
+                pos = -1
+                pass
+
+            return pos
 
     def get_first(self, mode: ChargingMode, num: int = 1):
         requests = []
@@ -95,11 +116,11 @@ class WaitingArea:
             if mode == ChargingMode.Ignore or mode == ChargingMode.Normal:
                 for x in self.t_charging_queue:
                     requests.append(x)
-            if len(requests) < num:
+            if mode == ChargingMode.Ignore and len(requests) < num:
                 return []
             
-            sorted(requests, key=lambda x: get_charging_queue_num(x))
-            return requests[:num]
+            requests = sorted(requests, key=lambda x: get_charging_queue_num(x))
+            return requests[:num] if len(requests) > num else requests
 
 # 尝试叫号
 try_lock = threading.Lock()
@@ -123,7 +144,7 @@ def pile_available_callback(mode: ChargingMode):
 
 pile_callbacks.append(pile_available_callback)
       
-def start_calling_callback(mode: ChargingMode):
+def start_calling_callback():
     try_request(ChargingMode.Fast)
     try_request(ChargingMode.Normal)
 
@@ -207,10 +228,11 @@ class FIFOScheduler(Scheduler):
     def shutdown_pile(self, charge_mode, pile_id):
         info_list = list()
         # TODO : wirte generate bill in end_charing() at ChargingPile.py
+        waiting_area.stop_calling()
         to_schedule_list = charging_piles[pile_id].shutdown()
         for info in to_schedule_list:
-            info_list.append((get_charging_request(info.car_id).queue_num, 
-                             ChargingInfo(info.car_id, info.all_amount - info.charged_amount)))
+            new_info = info.relay()
+            info_list.append((get_charging_request(info.car_id).queue_num, new_info))
         
         for pile_index in self.piles[charge_mode.value]:
             pile = get_pile(pile_index)
@@ -222,6 +244,9 @@ class FIFOScheduler(Scheduler):
 
         info_list.sort(key=lambda x: x[0][1:])
 
+        for i in info_list:
+            print(f'{i[1].to_dict()}')
+
         for info in info_list:
             inserted = self.add_query(info[1].car_id)
             request = get_charging_request(info[1].car_id)
@@ -231,6 +256,7 @@ class FIFOScheduler(Scheduler):
                 break
             else:
                 request.set_pile_id(info[1].car_id)
+        waiting_area.start_calling()
 
 
 scheduler = FIFOScheduler()
