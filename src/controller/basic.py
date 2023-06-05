@@ -145,10 +145,12 @@ def get_result():
         "message": "获取结果成功"
       }
     """
+    print(f'******************* {timer.time().to_string()} **************************')
     res = {}
     res['time'] = timer.time().to_string()
     res['waiting_area'] = waiting_area.result()
     for key in charging_piles:
         res[key] = charging_piles[key].result()  
+    print(res)
     return jsonify({"status": 0, "message": res})
 
