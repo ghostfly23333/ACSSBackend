@@ -56,6 +56,10 @@ def get_charging_queue_num(car_id: str) -> str:
     req = request_dict.get(car_id)
     return req.queue_num if req is not None else None
 
+def get_charging_amount(car_id: str) -> float:
+    req = request_dict.get(car_id)
+    return req.amount if req is not None else None
+
 
 def get_charging_mode(car_id: str) -> ChargingMode:
     req = request_dict.get(car_id)
