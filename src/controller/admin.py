@@ -217,6 +217,7 @@ def query_report():
     @apiSuccess {Double} service 服务费
     @apiSuccess {Double} charge 充电费用
     @apiSuccess {Double} total 总费用
+    @apiSuccess {Int} count 充电次数
     @apiSuccessExample {json} Success-Response:
       HTTP/1.1 200 OK
       {
@@ -231,6 +232,7 @@ def query_report():
           "service": 0,
           "charge": 0,
           "total": 0
+          "count": 0
         }
       } 
     @apiErrorExample {json} Error-Response:
@@ -254,6 +256,7 @@ def query_report():
     
     min_start = 0.0
     max_end = 0.0
+    count = 0
     for content in container.all_bills():
         if (start == 0.0 or content['start_time'] >= start) and (end == 0.0 or content['end_time'] <= end):
             if min_start == 0.0 or content['start_time'] < min_start:
@@ -265,6 +268,7 @@ def query_report():
             service+=content['service_cost']
             charge+=content['charge']
             total+=content['total']
+            count += 1
 
     start = start if start != 0.0 else min_start
     end = end if end != 0.0 else max_end
@@ -279,7 +283,8 @@ def query_report():
           "amount": amount,
           "service": service,
           "charge": charge,
-          "total": total
+          "total": total,
+          "count": count
         }
       })
 
