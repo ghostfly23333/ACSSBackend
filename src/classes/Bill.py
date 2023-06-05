@@ -79,7 +79,7 @@ def divide_into_period(start_time,cur_time):
 def compute_price(start_time,cur_time,mode):
     cur_duration,peak,shoulder,off_peak=divide_into_period(start_time,cur_time)
 
-    if(mode==ChargingMode.Normal.value):#常规
+    if(mode==ChargingMode.Normal):#常规
         power=7
     else:
         power=30
