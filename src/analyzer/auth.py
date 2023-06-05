@@ -1,5 +1,6 @@
 from analyzer import users
 from classes.UserInfo import UserInfo
+from .__init__ import container
 
 
 def register(username, password):
@@ -8,6 +9,7 @@ def register(username, password):
 
     new_user = UserInfo(username, password, 0)
     users[username] = new_user
+    container.add_user(username)
     return True
 
 

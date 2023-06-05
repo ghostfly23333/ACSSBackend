@@ -158,8 +158,8 @@ def query_profile():
         "message": "token已过期"
       }
     """
-    user_id = request.args.get('user_id')
-    bills = container.find_user(str(user_id))
+    user_id = str(request.args.get('user_id')).strip()
+    bills = container.find_user(user_id)
     data = []
     if bills is not None:
       for bill in bills:

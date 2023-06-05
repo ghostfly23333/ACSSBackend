@@ -37,8 +37,8 @@ def register():
         "message": "用户名已存在"
       }
     """
-    username = request.json.get('username')
-    password = request.json.get('password')
+    username = str(request.json.get('username')).strip()
+    password = str(request.json.get('password')).strip()
     if (auth_register(username, password)):
         return jsonify({"status": 0, "message": "注册成功"})
     return jsonify({"status": 1, "message": "用户名已存在"})
