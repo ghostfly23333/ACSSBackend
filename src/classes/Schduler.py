@@ -11,7 +11,7 @@ class ScheduleMode(Enum):
     GLOBAL = 1
     GLOBAL_IGNORE_MODE = 2
 
-schedule_mode = ScheduleMode.NORMAL
+schedule_mode = ScheduleMode.GLOBAL_IGNORE_MODE
 
 calling_lock = threading.Lock()
 queue_lock = threading.Lock()
@@ -41,14 +41,16 @@ class WaitingArea:
         
     def result(self) -> str:
         waiting_cars = self.f_charging_queue + self.t_charging_queue
-        sorted(waiting_cars, key=lambda x: get_charging_request(x).queue_num)
+        waiting_cars = sorted(waiting_cars, key=lambda x: int(get_charging_request(x).queue_num))
         result = ""
         for car_id in waiting_cars:
             request = get_charging_request(car_id)
-            my_tuple = (car_id, request.mode, int(request.amount))
+            mode = 'T' if request.mode == ChargingMode.Normal else 'F'
+            my_tuple = (car_id, mode, int(request.amount))
             if car_id != waiting_cars[0]:
                 result += '-'            
             result += '(' + ', '.join(map(str, my_tuple)) + ')'
+        return result
 
     # 指定车辆进入等候区
     def enter(self, car_id: str):
