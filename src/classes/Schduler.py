@@ -150,9 +150,13 @@ def try_request(mode:ChargingMode,num = 1):
                     # 策略b
                     ## 快充调度
                     t_querys = sorted(firsts[:2*2], key=lambda x: get_charging_amount(x))
+                    for t_query in t_querys:
+                        get_charging_request(t_query).set_mode(ChargingMode.Fast)
                     scheduler.add_querys(t_querys)
                     ## 慢充调度
-                    f_querys = sorted(firsts[2*2:], key=lambda x: get_charging_amount(x))                                       
+                    f_querys = sorted(firsts[2*2:], key=lambda x: get_charging_amount(x))     
+                    for f_query in f_querys:
+                        get_charging_request(f_query).set_mode(ChargingMode.Normal)                                  
                     scheduler.add_querys(f_querys)
                 else:
                     scheduler.add_querys(firsts)
