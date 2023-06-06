@@ -8,7 +8,7 @@ from classes.Timer import Time
 app = Blueprint('admin_controller', __name__)
 
 from classes.ChargingPile import charging_piles, PileState
-from analyzer.__init__ import container
+from classes.Bill import bill_manager
 
 @app.route('/query/state', methods=['GET'])
 def query_state():
@@ -98,9 +98,9 @@ def alter_pile():
     
     if pile_id in charging_piles:
         pile = charging_piles[pile_id]
-        if pile.status != PileState.Error and status == 0:
+        if pile.status != PileState.Error.value and status == 0:
             scheduler.shutdown_pile(ChargingMode(pile.pile_type.value), pile.pile_id)
-        elif pile.status == PileState.Error and status == 1:
+        elif pile.status == PileState.Error.value and status == 1:
             pile.restart()
         else:
             return jsonify({
@@ -242,49 +242,21 @@ def query_report():
         "message": "token已过期"
       }
     """
-    start = request.args.get('start')
-    end = request.args.get('end')
-    duration,amount,service,charge,total=0,0,0,0,0
-    try:
-      start = Time.make(start).stamp if start != "" else 0.0
-      end = Time.make(end).stamp if end != "" else 0.0
-    except:
-      return jsonify({
-        "status": 1,
-        "message": "日期格式错误",
-      })
-    
-    min_start = 0.0
-    max_end = 0.0
-    count = 0
-    for content in container.all_bills():
-        if (start == 0.0 or content['start_time'] >= start) and (end == 0.0 or content['end_time'] <= end):
-            if min_start == 0.0 or content['start_time'] < min_start:
-                min_start = content['start_time']
-            if max_end == 0.0 or content['end_time'] > max_end:
-                max_end = content['end_time']
-            duration+=content['duration']
-            amount+=content['amount']
-            service+=content['service_cost']
-            charge+=content['charge']
-            total+=content['total']
-            count += 1
-
-    start = start if start != 0.0 else min_start
-    end = end if end != 0.0 else max_end
+    # start = request.args.get('start')
+    # end = request.args.get('end')
+    # duration,amount,service,charge,total=0,0,0,0,0
+    # try:
+    #   start = Time.make(start).stamp if start != "" else 0.0
+    #   end = Time.make(end).stamp if end != "" else 0.0
+    # except:
+    #   return jsonify({
+    #     "status": 1,
+    #     "message": "日期格式错误",
+    #   })
       
     return jsonify({
         "status": 0,
         "message": "查询成功",
-        "data": {
-          "start": Time(start).to_string() if start != 0.0 else "",
-          "end": Time(end).to_string() if end != 0.0 else "",
-          "duration": duration,
-          "amount": amount,
-          "service": service,
-          "charge": charge,
-          "total": total,
-          "count": count
-        }
+        "data": bill_manager.statistic()
       })
 

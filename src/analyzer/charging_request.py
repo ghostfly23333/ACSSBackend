@@ -2,6 +2,7 @@ from classes.ChargingRequest import ChargingRequest, request_dict, ChargingMode,
 from classes.ChargingPile import ChargingInfo, get_pile, is_charging
 from classes.Schduler import waiting_area
 from classes.Timer import timer
+from classes.Bill import bill_manager
 
 
 # 提交充电请求( 1: 提交成功  0: 提交失败 )
@@ -12,7 +13,7 @@ def submit_charging_request(user_id: str, car_id: str, mode: int,
     else:
         # 提交请求
         request = ChargingRequest(user_id, car_id, ChargingMode(mode), amount)
-        request.set_queue_num(generate_queue_num())
+        request.reset_bill()
         request_dict[car_id] = request
         waiting_area.enter(car_id)
         return 1
@@ -28,6 +29,8 @@ def alter_charging_mode(car_id: str, mode: int) -> int:
             request_dict[car_id].set_mode(ChargingMode(mode))
             # 修改后重新生成排队号
             request_dict[car_id].set_queue_num(generate_queue_num())
+            bill_manager.find(request_dict[car_id].bill_id).end()
+            request_dict[car_id].reset_bill()
             waiting_area.enter(car_id)   
             return 0
         else:
@@ -68,6 +71,7 @@ def cancel_charging_request(car_id) -> int:
             # 在等候区
             print('in waiting area')
             waiting_area.exit(car_id)
+            request_dict[car_id].end()
             del request_dict[car_id]
         else:
             print('in charging area')

@@ -3,7 +3,7 @@ from flask import request
 from flask import jsonify
 from analyzer.charging_request import alter_charging_mode, alter_charging_amount, cancel_charging_request
 from analyzer.charging_request import submit_charging_request, query_charging_detail, query_charging_request, query_brief_info
-from analyzer.__init__ import container
+from classes.Bill import bill_manager
 
 
 app = Blueprint('user_controller',__name__)
@@ -159,15 +159,14 @@ def query_profile():
       }
     """
     user_id = str(request.args.get('user_id')).strip()
-    bills = container.find_user(user_id)
+    bills = bill_manager.find_all(user_id)
     data = []
     if bills is not None:
       for bill in bills:
           data.append({
-              "id": bills[bill]['bill_id'],
-              "date": bills[bill]['date'],
-              "car": bills[bill]['car'],
-              "cost": bills[bill]['total']
+              "id": bill.id,
+              "date": bill.date,
+              "car": bill.car,
           })
       return jsonify({
           "status": 0,
@@ -211,23 +210,25 @@ def query_bill():
         "status": 0,
         "message": "查询成功",
         "data": {
-          "bill_id": "",
-          "date": "",
-          "car": "",
-          "status": 0,
-          "detail"{
-            "amount": 0,
-            "duration": 0,
-            "mode": 0,
-            "pile": 0,
-            "start_time": "",
-            "end_time": ""
-          }
-          "cost":{
-            "service": 0,
-            "charge": 0,
-            "total": 0
-          }
+          "id":"",
+          "user":"",
+          "car":"",
+          "detail":[
+            {
+              "id":"",
+              "date":"",
+              "status":0,
+              "pile":"",
+              "mode":0,
+              "start_time":"",
+              "end_time":"",
+              "duration":"",
+              "amount":"",
+              "service":"",
+              "charge":"",
+              "total":""
+            }
+          ]
         }
       }
     @apiErrorExample {json} Error-Response:
@@ -239,11 +240,10 @@ def query_bill():
     """
     user_id = request.args.get('user_id')
     bill_id = request.args.get('bill_id')
-    bill = container.find_user_bill(user_id,bill_id)
-    if bill is None:
+    bill = bill_manager.find(bill_id)
+    if bill is None or bill.user != user_id:
         return jsonify({"status":1,"message":"账单不存在"})
-    else:
-      return jsonify({"status":0,"message":"查询成功","data":bill.to_dict()})
+    return jsonify({"status":0,"message":"查询成功","data":bill.to_dict()})
 
 
 
