@@ -1,4 +1,5 @@
 from enum import Enum
+from classes.Bill import bill_manager
 
 
 class ChargingMode(Enum):
@@ -10,6 +11,7 @@ class ChargingMode(Enum):
 class ChargingRequest:
     user_id: str
     car_id: str
+    bill_id:str
     mode: ChargingMode
     amount: float
     queue_num: str
@@ -17,11 +19,17 @@ class ChargingRequest:
 
     def __init__(self, user_id: str, car_id: str, mode: ChargingMode, amount: float):
         self.user_id = user_id
+        self.bill_id = ''
         self.car_id = car_id
         self.mode = mode
         self.amount = amount
         self.pile_id = '',
-        self.queue_num = -1
+        self.queue_num = ''
+
+    def reset_bill(self):
+        if self.bill_id != '':
+            bill_manager.find(self.bill_id).end()
+        self.bill_id = bill_manager.generate(self.user_id, self.car_id, self.mode.value).id
 
     def set_mode(self, mode: ChargingMode):
         self.mode = mode

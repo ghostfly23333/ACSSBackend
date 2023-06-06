@@ -3,9 +3,9 @@
 from classes.ChargingPile import charging_piles, PileType, ChargingInfo, PileType, charging_piles, pile_callbacks, get_pile
 from classes.ChargingRequest import get_charging_request, ChargingMode, get_charging_mode, get_charging_queue_num, get_charging_amount
 import threading
-from enum import Enum
 from classes.Timer import timer
 from config.sys import ScheduleMode,SCHEDULE_MODE
+from classes.Bill import bill_manager
 
 
 calling_lock = threading.Lock()
@@ -55,13 +55,14 @@ class WaitingArea:
                 self.t_charging_queue.append(car_id)
             else:
                 self.f_charging_queue.append(car_id)
+            get_charging_request(car_id).reset_bill()
         try_request(mode)
 
 
     # 指定车辆退出等候区
     def exit(self, car_id: str):
         with queue_lock:
-            try:      
+            try:
                 if car_id in self.t_charging_queue:
                     self.t_charging_queue.remove(car_id)
                 else:
@@ -222,7 +223,7 @@ class FIFOScheduler(Scheduler):
         else:
             request.set_pile_id(minimum_index)
             print(f'{timer.time().to_string()} new car: {car_id}')
-            if charging_piles[minimum_index].queue_car(ChargingInfo(car_id, request.amount)):
+            if charging_piles[minimum_index].queue_car(ChargingInfo(request.bill_id,car_id, request.amount)):
                 waiting_area.exit(car_id)
                 return True, minimum_index
             else:
@@ -266,6 +267,7 @@ class FIFOScheduler(Scheduler):
             if request is None:
                 continue
             request.amount = request.amount - info[1].charged_amount
+            bill_manager.find(info[1].bill_id).new(request.mode.value)
             inserted = self.add_query(info[1].car_id)
             if not inserted[0]:
                 request.set_pile_id('')

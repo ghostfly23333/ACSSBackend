@@ -1,5 +1,5 @@
 from classes.UserInfo import UserInfo
-from classes.Bill import BillContainer
+from classes.Bill import bill_manager
 users_info = {
         "user1": "password1",
         "user2": "password2",
@@ -14,7 +14,7 @@ for user_id, password in users_info.items():
 # initialize root
 users["root"] = UserInfo("root", "123456",1)
 
-container = BillContainer()
-container.add_user("user1")
-container.add_user("user2")
-container.add_user("user3")
+# container = BillContainer()
+# container.add_user("user1")
+# container.add_user("user2")
+# container.add_user("user3")

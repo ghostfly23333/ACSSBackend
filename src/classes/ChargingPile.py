@@ -4,7 +4,7 @@ from classes.Timer import timer, Time
 from classes.ChargingRequest import del_charging_request
 from classes.ChargingRequest import get_charging_queue_num, ChargingMode, get_charging_mode,get_charging_request,get_charging_request_user
 from classes.Bill import compute_price,Bill,Bill_status
-from analyzer.__init__ import container
+from classes.Bill import bill_manager
 from config.sys import PILE_FAST_SPEED, PILE_NORMAL_SPEED
 
 import threading
@@ -27,6 +27,7 @@ PILE_CHARGE_SPEED = {
 
 class ChargingInfo:
     car_id: str
+    bill_id: str
     queue_num: str
     charged_amount: float
     all_amount: float
@@ -42,9 +43,10 @@ class ChargingInfo:
     base_fee: float
     base_start_time: Time
 
-    def __init__(self, car_id: str, all_amount: float):
+    def __init__(self, bill_id: str, car_id: str, all_amount: float):
         self.car_id = car_id
         self.all_amount = all_amount
+        self.bill_id = bill_id
         self.charged_amount = 0
         self.queue_num = get_charging_queue_num(car_id)
         self.charged_seconds = 0.0
@@ -58,13 +60,16 @@ class ChargingInfo:
     def __lt__(self, other):
         return self.queue_num < other.queue_num
 
-    def start(self, charge_speed: float):
+    def start(self,pile_id:str, type:PileType):
         self.start_time = timer.time()
-        self.charge_speed = charge_speed
+        self.charge_speed = PILE_CHARGE_SPEED[type]
         self.status = 1
+        bill = bill_manager.find(self.bill_id)
+        bill.start(pile_id,type.value)
 
     def end(self):
         self.update()
+        bill_manager.find(self.bill_id).end()
         if self.all_amount <= self.charged_amount:
             self.status = 2
         else:
@@ -159,10 +164,10 @@ class ChargingPile:
         if self.task_info is not None:
             self.task_info.end()
             self.total_amount += self.task_info.charged_amount
-            request = get_charging_request(self.task_info.car_id)
-            bill=Bill()
-            bill.generate_request(request.user_id,self.pile_id,self.task_info.car_id,request.mode.value,self.task_info.charged_amount,self.task_info.start_time)
-            bill.persist(end_time,Bill_status.Submitted,container)
+            # request = get_charging_request(self.task_info.car_id)
+            # bill=Bill()
+            # bill.generate_request(request.user_id,self.pile_id,self.task_info.car_id,request.mode.value,self.task_info.charged_amount,self.task_info.start_time)
+            # bill.persist(end_time,Bill_status.Submitted,container)
             if self.task_info.status == 2:
                 del_charging_request(self.task_info.car_id)
             self.task_info = None
@@ -194,7 +199,7 @@ class ChargingPile:
                 self.status = PileState.Working
                 interval = self.task_info.all_amount / self.charge_speed
                 print(f'charge_speed: {self.charge_speed} interval:{interval}')
-                self.task_info.start(self.charge_speed)
+                self.task_info.start(self.pile_id,self.pile_type)
                 self.task_id = timer.create_task(interval, self.end_charging, args=None)
 
     def cancel_charging(self, car_id: str):
@@ -250,6 +255,8 @@ class ChargingPile:
             self.start_time = None
 
             l = list(self.cars_queue)
+            for item in l:
+                item.end()
             self.cars_queue = list()
 
             if self.task_info is not None:
@@ -308,6 +315,8 @@ class ChargingPile:
     def clear_queue(self):
         with self.lock:
             l = list(self.cars_queue)
+            for item in l:
+                item.end()
             self.cars_queue = list()
             return l
 
