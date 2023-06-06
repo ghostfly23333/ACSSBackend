@@ -36,7 +36,7 @@ class WaitingArea:
         
     def result(self) -> str:
         waiting_cars = self.f_charging_queue + self.t_charging_queue
-        waiting_cars = sorted(waiting_cars, key=lambda x: int(get_charging_request(x).queue_num))
+        waiting_cars = sorted(waiting_cars, key=lambda x: get_charging_request(x).queue_num)
         result = ""
         for car_id in waiting_cars:
             request = get_charging_request(car_id)
