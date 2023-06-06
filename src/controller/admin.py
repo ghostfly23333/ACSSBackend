@@ -98,9 +98,9 @@ def alter_pile():
     
     if pile_id in charging_piles:
         pile = charging_piles[pile_id]
-        if pile.status != PileState.Error.value and status == 0:
+        if pile.status != PileState.Error and status == 0:
             scheduler.shutdown_pile(ChargingMode(pile.pile_type.value), pile.pile_id)
-        elif pile.status == PileState.Error.value and status == 1:
+        elif pile.status == PileState.Error and status == 1:
             pile.restart()
         else:
             return jsonify({

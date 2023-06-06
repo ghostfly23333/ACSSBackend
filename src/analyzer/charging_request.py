@@ -71,7 +71,7 @@ def cancel_charging_request(car_id) -> int:
             # 在等候区
             print('in waiting area')
             waiting_area.exit(car_id)
-            request_dict[car_id].end()
+            bill_manager.find(request_dict[car_id].bill_id).end()
             del request_dict[car_id]
         else:
             print('in charging area')

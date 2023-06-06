@@ -147,6 +147,7 @@ def query_profile():
               "date": "",
               "car": "",
               "cost": 0,
+              "status":0
             }
           ]
         }
@@ -160,27 +161,17 @@ def query_profile():
     """
     user_id = str(request.args.get('user_id')).strip()
     bills = bill_manager.find_all(user_id)
-    data = []
-    if bills is not None:
-      for bill in bills:
-          data.append({
-              "id": bill.id,
-              "date": bill.date,
-              "car": bill.car,
-          })
-      return jsonify({
-          "status": 0,
-          "message": "获取成功",
-          "data": {
-              "user_id": user_id,
-              "bill": data
-          }
-      })
-    else:
-      return jsonify({
-          "status": 1,
-          "message": "用户不存在"
-      })
+    data = [b.brief() for b in bills]
+
+    return jsonify({
+        "status": 0,
+        "message": "获取成功",
+        "data": {
+            "user_id": user_id,
+            "bill": data
+        }
+    })
+
 
 
 @app.route('/query/bill', methods=['GET'])

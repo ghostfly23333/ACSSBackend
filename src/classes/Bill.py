@@ -162,7 +162,7 @@ class BillDetail:
         if self.status == STATUS_CANCELED or self.status == STATUS_FINISHED:
             return
         if self.status == STATUS_SUBMITED:
-            self.status = STATUS_FINISHED
+            self.status = STATUS_CANCELED
             return
 
         cur_time = timer.time()
@@ -201,6 +201,15 @@ class Bill:
         self.end()
         self.detail.append(BillDetail().generate(self.id,mode))
         return self
+    
+    def brief(self):
+        data = {
+            'id':self.id,
+            'car':self.car,
+            'date':self.date,
+            'status':self.detail[-1].status,
+        }
+        return data
     
     def statistic(self) -> dict:
         data = {
