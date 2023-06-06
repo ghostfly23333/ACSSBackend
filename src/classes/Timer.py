@@ -1,7 +1,7 @@
 import time
 import threading
+from config.sys import SYSTEM_TIME_RATIO,SYSTEM_TIME_START
 
-SYSTEM_TIME_RATIO = 20
 
 class Time:
     stamp:float
@@ -121,8 +121,10 @@ class Timer:
                 else:
                     func(*args)
             
-
-timer = Timer(SYSTEM_TIME_RATIO,Time.make("2023-06-05 05:55:00"))
+if SYSTEM_TIME_START == "":
+    timer = Timer(SYSTEM_TIME_RATIO)
+else:
+    timer = Timer(SYSTEM_TIME_RATIO,Time.make(SYSTEM_TIME_START))
 
 # example
 # if __name__ == "__main__":

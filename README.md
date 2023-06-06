@@ -1,5 +1,16 @@
 # ACSSBackend
 
+## CONFIG
+- 在 `src/config/sys.py` 中修改系统配置
+
+## RUN
+- `pip install -r requirements.txt`
+- `python src/main.py`
+
+## TEST
+- `cd test`
+- `python test.py`
+
 `
 后端repo规范：
 尽量开一个自己的branch写代码，并用PR来做提交，PR之前记得rebase master。如果你是用可视化插件的选手，且完全不会git相关操作，请在push master之前手动pull一次master，然后编译一次确认功能正常。如果pull出现conflict请手动solve后再push。强烈建议关闭插件里--force的push（merge的时候rebase设成true）

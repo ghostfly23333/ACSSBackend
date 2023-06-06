@@ -5,13 +5,8 @@ from classes.ChargingRequest import get_charging_request, ChargingMode, get_char
 import threading
 from enum import Enum
 from classes.Timer import timer
+from config.sys import ScheduleMode,SCHEDULE_MODE
 
-class ScheduleMode(Enum):
-    NORMAL = 0
-    GLOBAL_LIMITED = 1
-    GLOBAL_IGNORE_MODE = 2
-
-schedule_mode = ScheduleMode.GLOBAL_LIMITED
 
 calling_lock = threading.Lock()
 queue_lock = threading.Lock()
@@ -89,7 +84,7 @@ class WaitingArea:
     def get_queue_position(self, car_id: str) -> int:
         with queue_lock:
             cur_list = []
-            if schedule_mode == ScheduleMode.NORMAL:
+            if SCHEDULE_MODE == ScheduleMode.NORMAL:
                 if get_charging_mode(car_id) == ChargingMode.Normal:
                     cur_list = self.t_charging_queue
                 else:
@@ -134,15 +129,15 @@ def try_request(mode:ChargingMode,num = 1):
     if mode is None:
         return
     # reset mode
-    if schedule_mode == ScheduleMode.GLOBAL_IGNORE_MODE:
+    if SCHEDULE_MODE == ScheduleMode.GLOBAL_IGNORE_MODE:
         mode = ChargingMode.Ignore
 
     # reset num
-    if schedule_mode != ScheduleMode.NORMAL:
+    if SCHEDULE_MODE != ScheduleMode.NORMAL:
         num = vacant_num(mode)
 
     # assert vacant num
-    if schedule_mode == ScheduleMode.GLOBAL_LIMITED:
+    if SCHEDULE_MODE == ScheduleMode.GLOBAL_LIMITED:
         if (mode == ChargingMode.Fast and num < 2) or (mode == ChargingMode.Normal and num < 3):
             return
 
@@ -150,7 +145,7 @@ def try_request(mode:ChargingMode,num = 1):
         with try_lock:
             firsts = waiting_area.get_first(mode, num)
             if len(firsts) > 0:
-                if schedule_mode == ScheduleMode.GLOBAL_IGNORE_MODE:
+                if SCHEDULE_MODE == ScheduleMode.GLOBAL_IGNORE_MODE:
                     # 策略b
                     ## 快充调度
                     t_querys = sorted(firsts[:2*2], key=lambda x: get_charging_amount(x))

@@ -3,6 +3,7 @@ from classes.ChargingRequest import ChargingMode
 # from Timer import timer, Time
 # from ChargingRequest import ChargingMode
 # from flask import jsonify
+from config.sys import PILE_NORMAL_SPEED,PILE_FAST_SPEED,EXPENSE_OFF_PEEK,EXPENSE_PEEK,EXPENSE_REGULAR,EXPENSE_SERVICE
 
 # 划分时间段
 def slice_time(start_time,cur_time,period_Start,period_end,period_attr):
@@ -80,16 +81,16 @@ def compute_price(start_time,cur_time,mode):
     cur_duration,peak,shoulder,off_peak=divide_into_period(start_time,cur_time)
 
     if(mode==ChargingMode.Normal):#常规
-        power=7
+        power=PILE_NORMAL_SPEED
     else:
-        power=30
+        power=PILE_FAST_SPEED
     kw_h_p=peak*power
     kw_h_s=shoulder*power
     kw_h_o=off_peak*power
     
     cur_amount = kw_h_p + kw_h_s+ kw_h_o
-    cur_service = 0.8*cur_amount
-    cur_charge = 1*kw_h_p+0.7*kw_h_s+0.4*kw_h_o
+    cur_service = EXPENSE_SERVICE * cur_amount
+    cur_charge = EXPENSE_PEEK * kw_h_p + EXPENSE_REGULAR * kw_h_s + EXPENSE_OFF_PEEK * kw_h_o
     return cur_duration,cur_amount,cur_service,cur_charge
 
 class Bill_status:

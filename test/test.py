@@ -6,6 +6,9 @@ from datetime import date
 import threading
 import requests
 
+RUNTIME_PORT = 10443
+TEST_DATASET = '4a'
+
 
 def extract_events(event_str):
     events = []
@@ -41,7 +44,7 @@ event_list = []
 current_date = date.today()
 date_string = current_date.strftime("%Y-%m-%d")
 # 打开 CSV 文件
-with open('4a.csv', 'r') as file:
+with open(f'{TEST_DATASET}.csv', 'r') as file:
     # 创建 CSV 读取器
     reader = csv.reader(file)
 
@@ -69,7 +72,7 @@ for item in event_list:
     print(item)
 file = open('output.txt', 'w')
 
-time_url = "http://127.0.0.1:10443/time"
+time_url = f"http://127.0.0.1:{RUNTIME_PORT}/time"
 headers = {
     'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
     'Content-Type': 'application/json'
@@ -79,7 +82,7 @@ time_payload = json.dumps({
 
 
 def print_result():
-    test_url = 'http://127.0.0.1:10443/result'
+    test_url = f'http://127.0.0.1:{RUNTIME_PORT}/result'
     test_payload = json.dumps({
         })
         
@@ -104,7 +107,7 @@ while(1):
                 # 提交充电申请
                 if item[3] == '0':
                     # 取消充电
-                    url = "http://127.0.0.1:10443/user/alter/cancel"
+                    url = f"http://127.0.0.1:{RUNTIME_PORT}/user/alter/cancel"
                     payload = json.dumps({
                         "user_id": "user1",
                         "car_id": item[1],
@@ -112,7 +115,7 @@ while(1):
                 else:
                     # 正常提交充电请求
                     mode = 1 if item[2] == 'F' else 0
-                    url = "http://127.0.0.1:10443/user/charge"
+                    url = f"http://127.0.0.1:{RUNTIME_PORT}/user/charge"
                     payload = json.dumps({
                         "user_id": "user1",
                         "car_id": item[1],
@@ -123,7 +126,7 @@ while(1):
                 print(response.text.encode('utf8').decode('unicode_escape'),file=file)
             elif item[0] == 'B':
                 # 充电桩故障
-                url = 'http://127.0.0.1:10443/admin/alter/pile'
+                url = 'http://127.0.0.1:{RUNTIME_PORT}/admin/alter/pile'
                 status = 2 if item[3] == '0' else 1
                 payload = json.dumps({
                     "pile_id": item[1],
@@ -135,7 +138,7 @@ while(1):
                 # 变更充电请求
                 if item[3] == '-1':
                     # 充电量不变 更改充电模式
-                    url = 'http://127.0.0.1:10443/user/alter/mode'
+                    url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/mode'
                     mode = 1 if item[2] == 'F' else 0
                     payload = json.dumps({
                         "user_id": "user1",
@@ -144,7 +147,7 @@ while(1):
                     })
                 elif item[2] == 'O':
                     # 充电量变更
-                    url = 'http://127.0.0.1:10443/user/alter/amount'
+                    url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/amount'
                     payload = json.dumps({
                         "user_id": "user1",
                         "car_id": item[1],
@@ -152,7 +155,7 @@ while(1):
                     })
                 else:
                     # 充电量和充电模式都变更
-                    url = 'http://127.0.0.1:10443/user/alter/mode_and_amount'
+                    url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/mode_and_amount'
                     mode = 1 if item[2] == 'F' else 0
                     payload = json.dumps({
                         "user_id": "user1",

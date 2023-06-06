@@ -5,6 +5,7 @@ from classes.ChargingRequest import del_charging_request
 from classes.ChargingRequest import get_charging_queue_num, ChargingMode, get_charging_mode,get_charging_request,get_charging_request_user
 from classes.Bill import compute_price,Bill,Bill_status
 from analyzer.__init__ import container
+from config.sys import PILE_FAST_SPEED, PILE_NORMAL_SPEED
 
 import threading
 
@@ -19,8 +20,8 @@ class PileType(Enum):
 
 # unit: 1 capacity per second
 PILE_CHARGE_SPEED = {
-    PileType.Fast: 30.0 / 3600,
-    PileType.Normal: 7.0 / 3600
+    PileType.Fast: PILE_FAST_SPEED / 3600,
+    PileType.Normal: PILE_NORMAL_SPEED / 3600
 }
 
 
