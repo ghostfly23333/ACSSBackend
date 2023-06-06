@@ -95,9 +95,12 @@ def print_result():
     data_row = []
     data_row.append(res["message"]["time"])
     for field in header[1:6]:
-        data_row.append(res["message"].get(field, {}).get("charging_area", ""))
+        data_res = res["message"].get(field, {}).get("charging_area", "")
+        #data_row.append(res["message"].get(field, {}).get("charging_area", ""))
         if "queuing_area" in res["message"].get(field, {}):
-            data_row.append(res["message"].get(field, {}).get("queuing_area", ""))
+            data_res += res["message"].get(field, {}).get("queuing_area", "")
+            #data_row.append(res["message"].get(field, {}).get("queuing_area", ""))
+        data_row.append(data_res)
         #data_row.append(res["message"].get(field, {}).get("queuing_area", ""))
     # data_row.append(res["message"]["F1"]["charging_area"])
     # data_row.append(res["message"]["F1"]["queuing_area"])
@@ -180,7 +183,7 @@ while(1):
                     "amount": float(item[3])
                 })
                 response = requests.request("POST", url, headers=headers, data=payload)
-                print(response.text.encode('utf8').decode('unicode_escape'), file=file)
+                # print(response.text.encode('utf8').decode('unicode_escape'), file=file)
                 # if item[3] == '-1':
                 #     # 充电量不变 更改充电模式
                 #     url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/mode'
