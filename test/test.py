@@ -127,7 +127,7 @@ while(1):
             elif item[0] == 'B':
                 # 充电桩故障
                 url = 'http://127.0.0.1:{RUNTIME_PORT}/admin/alter/pile'
-                status = 2 if item[3] == '0' else 1
+                status = 0 if item[3] == '0' else 1
                 payload = json.dumps({
                     "pile_id": item[1],
                     "status": status,
