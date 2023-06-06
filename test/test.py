@@ -95,9 +95,12 @@ def print_result():
     data_row = []
     data_row.append(res["message"]["time"])
     for field in header[1:6]:
-        data_row.append(res["message"].get(field, {}).get("charging_area", ""))
+        data_res = res["message"].get(field, {}).get("charging_area", "")
+        #data_row.append(res["message"].get(field, {}).get("charging_area", ""))
         if "queuing_area" in res["message"].get(field, {}):
-            data_row.append(res["message"].get(field, {}).get("queuing_area", ""))
+            data_res += res["message"].get(field, {}).get("queuing_area", "")
+            #data_row.append(res["message"].get(field, {}).get("queuing_area", ""))
+        data_row.append(data_res)
         #data_row.append(res["message"].get(field, {}).get("queuing_area", ""))
     # data_row.append(res["message"]["F1"]["charging_area"])
     # data_row.append(res["message"]["F1"]["queuing_area"])
@@ -125,7 +128,7 @@ while(1):
     url = ""
     payload = json.dumps({})
     event_time = event_list[0][0]
-    if event_time - now_stamp < 5:
+    if event_time <= now_stamp:
         # 事件已经发生
         for item in event_list[0][1]:
             if item[0] == 'A':
@@ -161,35 +164,55 @@ while(1):
                 #print(response.text.encode('utf8').decode('unicode_escape'),file=file)
             else:
                 # 变更充电请求
-                if item[3] == '-1':
-                    # 充电量不变 更改充电模式
-                    url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/mode'
-                    mode = 1 if item[2] == 'F' else 0
-                    payload = json.dumps({
-                        "user_id": "user1",
-                        "car_id": item[1],
-                        "mode": mode
-                    })
-                elif item[2] == 'O':
-                    # 充电量变更
-                    url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/amount'
-                    payload = json.dumps({
-                        "user_id": "user1",
-                        "car_id": item[1],
-                        "amount": float(item[3])
-                    })
-                else:
-                    # 充电量和充电模式都变更
-                    url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/mode_and_amount'
-                    mode = 1 if item[2] == 'F' else 0
-                    payload = json.dumps({
-                        "user_id": "user1",
-                        "car_id": item[1],
-                        "mode": mode,
-                        "amount": float(item[3])
-                    })
+                ## 取消充电请求
+                url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/cancel'
+                payload = json.dumps({
+                    "user_id": "user1",
+                    "car_id": item[1],
+                })
                 response = requests.request("POST", url, headers=headers, data=payload)
                 #print(response.text.encode('utf8').decode('unicode_escape'), file=file)
+
+                ## 提交新的充电请求  
+                mode = 1 if item[2] == 'F' else 0
+                url = f"http://127.0.0.1:{RUNTIME_PORT}/user/charge"
+                payload = json.dumps({
+                    "user_id": "user1",
+                    "car_id": item[1],
+                    "mode": mode,
+                    "amount": float(item[3])
+                })
+                response = requests.request("POST", url, headers=headers, data=payload)
+                # print(response.text.encode('utf8').decode('unicode_escape'), file=file)
+                # if item[3] == '-1':
+                #     # 充电量不变 更改充电模式
+                #     url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/mode'
+                #     mode = 1 if item[2] == 'F' else 0
+                #     payload = json.dumps({
+                #         "user_id": "user1",
+                #         "car_id": item[1],
+                #         "mode": mode
+                #     })
+                # elif item[2] == 'O':
+                #     # 充电量变更
+                #     url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/amount'
+                #     payload = json.dumps({
+                #         "user_id": "user1",
+                #         "car_id": item[1],
+                #         "amount": float(item[3])
+                #     })
+                # else:
+                #     # 充电量和充电模式都变更
+                #     url = f'http://127.0.0.1:{RUNTIME_PORT}/user/alter/mode_and_amount'
+                #     mode = 1 if item[2] == 'F' else 0
+                #     payload = json.dumps({
+                #         "user_id": "user1",
+                #         "car_id": item[1],
+                #         "mode": mode,
+                #         "amount": float(item[3])
+                #     })
+                # response = requests.request("POST", url, headers=headers, data=payload)
+                # print(response.text.encode('utf8').decode('unicode_escape'), file=file)
             # print(key, value)
             formatted_time = time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(event_time))
             #print(time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(event_time)), file=file)
@@ -197,8 +220,9 @@ while(1):
             #print(url, payload, file=file)
         file.flush()
         event_list.pop(0)
-        threading.Timer(1,print_result).start()
+        print_result()
+        # threading.Timer(1,print_result).start()
         
-    time_.sleep(0.2)
+    # time_.sleep(0.2)
 
 
