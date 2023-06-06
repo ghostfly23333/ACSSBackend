@@ -5,9 +5,10 @@ import time as time_
 from datetime import date
 import threading
 import requests
+import csv
 
 RUNTIME_PORT = 10443
-TEST_DATASET = '4a'
+TEST_DATASET = '2'
 
 
 def extract_events(event_str):
@@ -68,10 +69,12 @@ with open(f'{TEST_DATASET}.csv', 'r') as file:
 '''
     生成 JSON 请求
 '''
+header = ['Time','F1', 'F2', 'T1', 'T2', 'T3','Waiting']  # 表头信息
 for item in event_list:
     print(item)
-file = open('output.txt', 'w')
-
+file = open('output.csv', 'w')
+writer = csv.writer(file)
+writer.writerow(header)
 time_url = f"http://127.0.0.1:{RUNTIME_PORT}/time"
 headers = {
     'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
@@ -87,7 +90,29 @@ def print_result():
         })
         
     response = requests.request("POST", test_url, headers=headers, data=test_payload)
-    print(response.text.encode('utf8').decode('unicode_escape'), file=file)
+    res = json.loads(response.text)
+    #data_row = [response.text["message"].get(field, {}).get("charging_area", "") for field in header]
+    data_row = []
+    data_row.append(res["message"]["time"])
+    for field in header[1:6]:
+        data_row.append(res["message"].get(field, {}).get("charging_area", ""))
+        if "queuing_area" in res["message"].get(field, {}):
+            data_row.append(res["message"].get(field, {}).get("queuing_area", ""))
+        #data_row.append(res["message"].get(field, {}).get("queuing_area", ""))
+    # data_row.append(res["message"]["F1"]["charging_area"])
+    # data_row.append(res["message"]["F1"]["queuing_area"])
+    # data_row.append(res["message"]["F2"]["charging_area"])
+    # data_row.append(res["message"]["F2"]["queuing_area"])
+    # data_row.append(res["message"]["T1"]["charging_area"])
+    # data_row.append(res["message"]["T1"]["queuing_area"])
+    # data_row.append(res["message"]["T2"]["charging_area"])
+    # data_row.append(res["message"]["T2"]["queuing_area"])
+    # data_row.append(res["message"]["T3"]["charging_area"])
+    # data_row.append(res["message"]["T3"]["queuing_area"])
+    data_row.append(res["message"]["waiting_area"])
+    #print(data_row, file=file)
+    writer.writerow(data_row)
+    #print(response.text.encode('utf8').decode('unicode_escape'), file=file)
 
 
 while(1):
@@ -123,17 +148,17 @@ while(1):
                         "amount": float(item[3])
                     })
                 response = requests.request("POST", url, headers=headers, data=payload)
-                print(response.text.encode('utf8').decode('unicode_escape'),file=file)
+                #print(response.text.encode('utf8').decode('unicode_escape'),file=file)
             elif item[0] == 'B':
                 # 充电桩故障
-                url = 'http://127.0.0.1:{RUNTIME_PORT}/admin/alter/pile'
+                url = f'http://127.0.0.1:{RUNTIME_PORT}/admin/alter/pile'
                 status = 0 if item[3] == '0' else 1
                 payload = json.dumps({
                     "pile_id": item[1],
                     "status": status,
                 })
                 response = requests.request("POST", url, headers=headers, data=payload)
-                print(response.text.encode('utf8').decode('unicode_escape'),file=file)
+                #print(response.text.encode('utf8').decode('unicode_escape'),file=file)
             else:
                 # 变更充电请求
                 if item[3] == '-1':
@@ -164,12 +189,12 @@ while(1):
                         "amount": float(item[3])
                     })
                 response = requests.request("POST", url, headers=headers, data=payload)
-                print(response.text.encode('utf8').decode('unicode_escape'), file=file)
+                #print(response.text.encode('utf8').decode('unicode_escape'), file=file)
             # print(key, value)
             formatted_time = time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(event_time))
-            print(time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(event_time)), file=file)
-            print(time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(now_stamp)), file=file)
-            print(url, payload, file=file)
+            #print(time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(event_time)), file=file)
+            #print(time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(now_stamp)), file=file)
+            #print(url, payload, file=file)
         file.flush()
         event_list.pop(0)
         threading.Timer(1,print_result).start()
