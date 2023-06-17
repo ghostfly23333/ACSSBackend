@@ -333,6 +333,16 @@ class ChargingPile:
     def is_vacant(self) -> bool:
         with self.lock:
             return self.status != PileState.Error and len(self.cars_queue) == 0
+        
+    def numbers(self) -> int:
+        num = 0
+        with self.lock:
+            if self.status == PileState.Error:
+                return 0
+            if self.task_info is not None:
+                num += 1
+            num += len(self.cars_queue)
+            return num
     
     def get_maximum_available(self) -> int:
         with self.lock:

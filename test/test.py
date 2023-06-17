@@ -7,8 +7,10 @@ import threading
 import requests
 import csv
 
+session = requests.Session()
+
 RUNTIME_PORT = 10443
-TEST_DATASET = '2'
+TEST_DATASET = '4b'
 
 
 def extract_events(event_str):
@@ -85,11 +87,13 @@ time_payload = json.dumps({
 
 
 def print_result():
+    global session
     test_url = f'http://127.0.0.1:{RUNTIME_PORT}/result'
     test_payload = json.dumps({
         })
-        
-    response = requests.request("POST", test_url, headers=headers, data=test_payload)
+    
+    response = session.post(test_url, headers=headers, data=test_payload)
+    # response = session.request("POST", test_url, headers=headers, data=test_payload)
     res = json.loads(response.text)
     #data_row = [response.text["message"].get(field, {}).get("charging_area", "") for field in header]
     data_row = []
@@ -117,11 +121,15 @@ def print_result():
     writer.writerow(data_row)
     #print(response.text.encode('utf8').decode('unicode_escape'), file=file)
 
+print(f'events left: {len(event_list)}')
+
+
 
 while(1):
     if len(event_list) == 0:
         break
-    response = requests.request("GET", time_url, headers=headers, data=time_payload)
+    response = session.request("GET", time_url, headers=headers, data=time_payload)
+    # response = requests.request("GET", time_url, headers=headers, data=time_payload)
     now_stamp = json.loads(response.text)['data']['stamp']
    # print(now_stamp)
 
@@ -150,7 +158,7 @@ while(1):
                         "mode": mode,
                         "amount": float(item[3])
                     })
-                response = requests.request("POST", url, headers=headers, data=payload)
+                response = session.request("POST", url, headers=headers, data=payload)
                 #print(response.text.encode('utf8').decode('unicode_escape'),file=file)
             elif item[0] == 'B':
                 # 充电桩故障
@@ -160,7 +168,7 @@ while(1):
                     "pile_id": item[1],
                     "status": status,
                 })
-                response = requests.request("POST", url, headers=headers, data=payload)
+                response = session.request("POST", url, headers=headers, data=payload)
                 #print(response.text.encode('utf8').decode('unicode_escape'),file=file)
             else:
                 # 变更充电请求
@@ -170,7 +178,7 @@ while(1):
                     "user_id": "user1",
                     "car_id": item[1],
                 })
-                response = requests.request("POST", url, headers=headers, data=payload)
+                response = session.request("POST", url, headers=headers, data=payload)
                 #print(response.text.encode('utf8').decode('unicode_escape'), file=file)
 
                 ## 提交新的充电请求  
@@ -182,7 +190,7 @@ while(1):
                     "mode": mode,
                     "amount": float(item[3])
                 })
-                response = requests.request("POST", url, headers=headers, data=payload)
+                response = session.request("POST", url, headers=headers, data=payload)
                 # print(response.text.encode('utf8').decode('unicode_escape'), file=file)
                 # if item[3] == '-1':
                 #     # 充电量不变 更改充电模式
@@ -221,8 +229,21 @@ while(1):
         file.flush()
         event_list.pop(0)
         print_result()
+        print(f'events left: {len(event_list)}')
         # threading.Timer(1,print_result).start()
         
     # time_.sleep(0.2)
 
 
+while(1):
+    time_.sleep(1)
+    url = f'http://127.0.0.1:{RUNTIME_PORT}/numbers'
+    response = session.get(url, headers=headers)
+    res = json.loads(response.text)
+    num = res['result']
+    print(f'checking: {num}')
+    if num == 0:
+        print('end')
+        url = f'http://127.0.0.1:{RUNTIME_PORT}/admin/dump'
+        session.request("GET", url, headers=headers)
+        break

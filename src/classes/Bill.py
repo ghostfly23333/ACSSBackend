@@ -1,5 +1,6 @@
 from classes.Timer import timer, Time
 from config.sys import PILE_NORMAL_SPEED,PILE_FAST_SPEED,EXPENSE_OFF_PEEK,EXPENSE_PEEK,EXPENSE_REGULAR,EXPENSE_SERVICE
+from config.sys import TEST_DATASET
 
 # 划分时间段
 def slice_time(start_time,cur_time,period_Start,period_end,period_attr):
@@ -98,6 +99,7 @@ STATUS_SUBMITED = 0
 STATUS_CHARGING = 1
 STATUS_FINISHED = 2
 STATUS_CANCELED = 3
+id_count = 0
 
 class BillDetail:
     id:str
@@ -112,6 +114,7 @@ class BillDetail:
     charge:float
 
     def __init__(self):
+        self.counter = 0
         self.id = ''
         self.date = ''
         self.status = STATUS_SUBMITED
@@ -127,6 +130,7 @@ class BillDetail:
 
     def to_dict(self):
         return {
+            'counter':self.counter,
             'id':self.id,
             'date':self.date,
             'status':self.status,
@@ -140,11 +144,20 @@ class BillDetail:
             'charge':self.charge,
             'total':self.service + self.charge
         }
+    
+    def dump_txt(self,car_id:str):
+        start = self.start_time.to_string() if self.start_time != None else "N/A"
+        end = self.end_time.to_string() if self.end_time != None else "N/A"
+        txt = f'{car_id}\t{self.counter}\t\t{start}\t\t{self.pile}\t\t\t{self.amount:.2f}\t\t{int(self.duration*3600)}\t\t{start}\t\t{end}\t\t{self.charge:.2f}\t\t\t{self.service:.2f}\t\t\t{(self.service + self.charge):.2f}'
+        return txt
 
     def generate(self,bill_id,mode):
+        global id_count
         cur_time = timer.time()
         id = f'{bill_id}_{int(cur_time.stamp * 1000)}'
         date = cur_time.to_string()
+        self.counter = id_count
+        id_count += 1
         self.id = id
         self.date = date
         self.status = STATUS_SUBMITED
@@ -175,8 +188,10 @@ class BillDetail:
         self.status = STATUS_FINISHED
         return self
 
+bill_counter = 0
 
 class Bill:
+    counter:int
     id:str
     user:str
     car:str
@@ -184,11 +199,15 @@ class Bill:
     detail:list
 
     def __init__(self) -> None:
+        self.counter = 0
         self.id = ''
         self.car = ''
         self.detail = list()
 
     def create(self,user_id:str,car_id:str,mode:int):
+        global bill_counter
+        self.counter = bill_counter
+        bill_counter += 1
         self.user = user_id
         self.car = car_id
         self.id = f'{car_id}_{int(timer.time().stamp*1000)}'
@@ -251,6 +270,15 @@ class Bill:
             'detail':[d.to_dict() for d in self.detail]
         }
     
+    def dump_txt(self):
+        data = self.statistic()
+        txt = f'{self.car}\t{self.counter}\t\t{data["start_time"]}\t\t{data["amount"]:.2f}\t\t{int(data["duration"]*3600)}\t\t{data["start_time"]}\t\t{data["end_time"]}\t\t{data["service"]:.2f}\t\t\t{data["charge"]:.2f}\t\t\t{data["total"]:.2f}\t\t'
+        for i in range(len(self.detail)):
+            txt += f'{self.detail[i].counter}'
+            if i < len(self.detail) - 1:
+                txt += ','
+        return txt
+    
 
 class BillManager:
     bills:dict
@@ -292,6 +320,27 @@ class BillManager:
             data['charge'] += d['charge']
             data['total'] += d['total']
         return data
+    
+
+    def dump_txt(self):
+        bf = open(f'{TEST_DATASET}_bill.txt','w',encoding='utf-8')
+        df = open(f'{TEST_DATASET}_detail.txt','w',encoding='utf-8')
+        bf.write('车辆编码\t账单编号\t账单生成时间\t充电电量(度)\t充电时长(秒)\t启动时间\t停止时间\t充电费用(元)\t服务费用(元)\t总费用(元)\t详单列表编号\n')
+        bf.write('='*170)
+        bf.write('\n')
+        df.write('车辆编码\t详单编号\t详单生成时间\t充电桩编号\t充电电量(度)\t充电时长(秒)\t启动时间\t停止时间\t充电费用(元)\t服务费用(元)\t总费用(元)\n')
+        df.write('='*170)
+        df.write('\n')
+        for idx in self.bills:
+            bill = self.bills[idx]
+            if bill.detail[-1].status < STATUS_FINISHED:
+                continue
+            bf.write(bill.dump_txt() + '\n')
+            for detail in bill.detail:
+                df.write(detail.dump_txt(bill.car) + '\n')
+        bf.close()
+        df.close()
+        
 
     
 bill_manager = BillManager()

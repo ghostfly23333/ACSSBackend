@@ -200,6 +200,13 @@ def query_pile_waitlist():
         "message": "充电桩不存在",
     })
 
+@app.route('/dump', methods=['GET'])
+def dump_data():
+    bill_manager.dump_txt()
+    return jsonify({
+        "status": 0,
+        "message": "导出成功",
+    })
 
 
 @app.route('/query/report', methods=['GET'])

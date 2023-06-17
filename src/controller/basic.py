@@ -154,3 +154,10 @@ def get_result():
     # print(res)
     return jsonify({"status": 0, "message": res})
 
+
+@app.route('/numbers', methods=['GET'])
+def get_vacant():
+    numbers = 0
+    for key in charging_piles:
+        numbers += charging_piles[key].numbers()
+    return jsonify({"status": 0, "message": "获取成功", "result":numbers})

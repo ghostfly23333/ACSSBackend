@@ -19,12 +19,12 @@ class ScheduleMode(Enum):
 
 SCHEDULE_MODE = ScheduleMode.NORMAL
 
-SYSTEM_TIME_RATIO = 50      # 系统时间倍率
-SYSTEM_TIME_START = ""      # 系统时间起始(格式: 2019-01-01 00:00:00, 留空为当前时间)
+SYSTEM_TIME_RATIO = 500      # 系统时间倍率
+SYSTEM_TIME_START = "2023-06-18 05:55:00"      # 系统时间起始(格式: 2019-01-01 00:00:00, 留空为当前时间)
 
 
 RUNTIME_HOST = "0.0.0.0"    # 监听地址
 RUNTIME_PORT = 10443        # 监听端口
 RUNTIME_DEBUG = True        # 调试信息
 
-TEST_DATASET = '1'          # 测试数据集
+TEST_DATASET = '4b'          # 测试数据集
